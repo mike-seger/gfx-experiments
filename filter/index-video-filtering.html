@@ -6,12 +6,14 @@
     <title>Video Processing with Scale and Effect Controls</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; color: white; background: black; }
-        h1 { margin:0; padding:0; }
-        #canvas, #video { display: inline-block; margin-top: 20px; max-width: 40%; vertical-align: top; }
-        #canvas { width: 40%; height: auto; image-rendering: pixelated; max-width: 40%; max-height: calc(100vh - 100px); }
-        .canvas-wide { width: 85%; max-width: 85%; }
-        /* #recordedVideo { width: 600px; max-height: 400px; } */
-        .save-row{ background: black !important; }
+        h1 { margin:0; padding:0; display: block; }
+        .canvas, #video { display: inline-block; margin-top: 20px; max-width: 40%; vertical-align: top; }
+        .canvas { width: 40%; height: auto; image-rendering: pixelated; max-width: 40%; max-height: calc(100vh - 100px); }
+        .canvas-wide { width: 80%; max-width: 80%; }
+        
+        /* dat-gui */
+        .dg li.save-row.save-row { background-color: black; }
+        .save-row .button { background-color: rgb(81, 81, 81) !important; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"
         integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg==" 
@@ -22,17 +24,18 @@
     <h1 id="title" style="display: block;">Video Processing with Scale and Filter Controls</h1>
     <br>
     <video id="video" controls muted autoplay loop></video>
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas" class="canvas"></canvas>
 
     <script src="../common/Utils.js"></script>
     <script src="../filter/Dithering.js"></script>
     <script type="module">
-        const maxVideos = 29
+        const maxVideos = 26
         const videopfx = 'test'
+
+        const transientSettings = { showOriginal: false }
 
         const settings = {
             video: 'test 01',
-            showOriginal: false,
             scaling: '1 : 8',
             filter: 'None',
             smoothPixels: false,
@@ -98,7 +101,7 @@
         setupControls(settings)
         updateCanvasStyle()
         videoChanged()
-        showOriginal(settings.showOriginal)
+        showOriginal(transientSettings.showOriginal)
 
         video.addEventListener('loadeddata', () => { updateCanvasSize() })
 
@@ -134,16 +137,8 @@
         addPrevNextToSelects()
 
         function showOriginal(show) {
-            video.style.display = show?'inline-block':'none'
-            title.style.display = show?'inline-block':'none'
+            video.style.display = title.style.display = show?'inline-block':'none'
             setClass(canvas, !show, 'canvas-wide')
-            if(show) {
-                canvas.style.width = '40%'
-                canvas.style["max-width"] = '40%'
-            } else {
-                canvas.style.width = '80%'
-                canvas.style["max-width"] = '80%'
-            }
         }
 
         function updateCanvasStyle() {
@@ -197,8 +192,12 @@
         }
 
         function setupControls(settings) {
+            dat.GUI.TEXT_OPEN = "Parameters";
+            dat.GUI.TEXT_CLOSED = "Hide parameters";
             const gui = new dat.GUI(datConfig)
-            gui.useLocalStorage = false
+
+            gui.add(transientSettings, 'showOriginal').name("show original").onChange(() => { showOriginal(transientSettings.showOriginal) })
+            gui.useLocalStorage = true
             gui.remember(settings)
             const videos = []
             for (let i = 1; i <= maxVideos; i++) {
@@ -206,7 +205,6 @@
                 videos.push(`${videopfx} ${num}`)
             }
             gui.add(settings, 'video', videos ).onChange(() => { videoChanged() })
-            gui.add(settings, 'showOriginal').onChange(() => { showOriginal(settings.showOriginal) })
             gui.add(settings, 'filter', [
                 'None',
                 'Ordered Dither',
@@ -227,9 +225,9 @@
                 scalings.push(`1 : ${divisor}`)
             }
             gui.add(settings, 'scaling', scalings ).onChange(() => { updateCanvasSize() })
-            gui.add(settings, 'smoothPixels').onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'smoothPixels').name("smooth pixels").onChange(() => { updateCanvasStyle() })
             gui.add(settings, 'grayscale', 0, 100).step(1).onChange(() => { updateCanvasStyle() })
-            gui.addColor(settings, "monoColor")
+            gui.addColor(settings, "monoColor").name("mono color")
             gui.add(settings, 'contrast', 0, 1000).step(1).onChange(() => { updateCanvasStyle() })
             gui.add(settings, 'brightness', 0, 4000).step(1).onChange(() => { updateCanvasStyle() })
             gui.add(settings, 'blur', 0, 32).step(1).onChange(() => { updateCanvasStyle() })
