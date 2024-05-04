@@ -36,7 +36,7 @@
 
         const settings = {
             video: 'test 01',
-            scaling: '1 : 8',
+            scaling: '1 : 1',
             filter: 'None',
             smoothPixels: false,
             blur: 0,
@@ -68,12 +68,12 @@
         const presetA2B2 = Object.assign({}, presetA2B1, { filter: 'Floyd-Steinberg Filter' })
 
         const presets = {
-            "preset": "Default",
+            "preset": "select preset ...",
             "closed": false,
             "remembered": {
-                " ": { "0": settings }, 
+                "select preset ...": { "0": settings }, 
                 "System": { "0": presetSystem }, 
-                "Alient Comms": { "0": presetAlienComms },
+                "Alien Comms": { "0": presetAlienComms },
                 "Driving": { "0": presetDriving },
                 "Neurons": { "0": presetNeurons },
                 "Coding": { "0": presetCoding },
