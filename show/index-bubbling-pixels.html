@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Object Screen Saver with Pixelation Effect</title>
+    <style>
+        body {
+            background-color: black;
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas { display: block; }
+    </style>
+    <link rel="stylesheet" href="bubbling-pixels-settings.css">
+</head>
+<body>
+    <div id="scene"></div>
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <iframe id="settingsFrame" src="about:blank" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.164.1/three.module.min.js",
+            "three/examples/jsm/": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.164.1/examples/jsm/",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+          }
+        }
+    </script>
+    <script src="bubbling-pixels-settings.js"></script>
+
+    <script type="module">
+        import { ObjectManager } from '../3d-objects/ObjectManager.js'
+
+        const modelConfigs = [
+            { imageSrc: '../images/cursor-16x16.png', gapFactor: 0.1, depthFactor: 2, ignoreColor: null },
+            { imageSrc: '../images/cursor-32x32.png', gapFactor: 0.05, depthFactor: 1, ignoreColor: null }
+        ]
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlObjectType = urlParams.get('objectType');
+        let objectManager = null
+
+        let settings = {
+            cubeSize: 50,
+            maxOpacityDuration: 80,
+            minDiameterPercent: 2,
+            maxDiameterPercent: 20,
+            minVelocity: 1,
+            maxVelocity: 10,
+            objectCount: 50,
+            objectType: urlObjectType?urlObjectType:'Sphere',
+            color1: '#ccccff',
+            color2: '#0000ff',
+            pixelSize: 48
+        }
+
+        window.onload = function() { init(settings) }
+
+        function init(settings) {
+            initSettingsDialog(settings)
+            objectManager = new ObjectManager(settings)
+            objectManager.initModels(modelConfigs)
+            animate()
+        }
+
+        function animate() {
+            requestAnimationFrame(animate)
+            objectManager.moveObjects()
+        }
+
+        window.addEventListener('message', receiveMessage, false)
+
+        function receiveMessage(event) {
+            objectManager.updateSettings(event.data, settings)
+        }
+    </script>
+</body>
+</html>

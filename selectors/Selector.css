@@ -1,0 +1,57 @@
+
+.selector-box {
+    margin: 0 70px 15px 150px;
+    position: relative;
+}
+
+.selector-box * {
+    background-color: inherit; 
+    color: #fff;
+}
+
+.selector select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding: 10px 15px;
+    background-color: #333; 
+    color: #fff; 
+    border: none;
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+    width: 150px;
+    font: 16px;
+}
+ 
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding: 2px;
+    font-size: 16px;
+    width: 150px;
+    border-radius: 5px;
+    border-color: gray
+    outline: none;
+    cursor: pointer;
+}
+
+.selector select:focus {
+    box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.2); /* Soft glow effect on focus */
+}
+
+.selector option {
+    background-color: #131313; /* Darker background for options */
+    color: #fff; /* Light color for option text */
+}
+
+.selector-label {
+    position: absolute;
+    font: bold 16px helvetica, arial;
+    top: 2px;
+    left: -160px;
+    width: 110px;
+    text-align: right;
+    color: #fff; 
+}

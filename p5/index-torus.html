@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.js"></script>
+  <style>
+    body {
+        overflow: hidden;
+        margin: 0;
+    }
+  </style>
+</head>
+<body>
+    <script>
+        let angle=0;
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight, WEBGL);
+            angleMode(DEGREES);
+        }
+
+        function draw() {
+            background(0);
+            normalMaterial();
+            //ambientLight(0,255,0);
+            directionalLight(0, 160, 255, -50, 0, -50);
+            pointLight(0,100,255,-10,10,0);
+            ambientMaterial(0,180,255);
+            
+            translate(-windowWidth/6,-windowHeight/6);
+            rotateZ(-angle);
+            rotateY(angle);
+            rotateX(angle);
+            torus(100,50,1024,32);
+            angle = angle+3
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+body { 
+    margin: 20px;  padding: 20px; background-color: black; 
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.patterns li {
+    width: 150px;
+    height: 150px;
+    box-shadow: 1px 1px 5px #000;
+    margin: 5px;
+    float: left;
+    position: relative;
+}
+.patterns li span{
+    background: rgba(3, 0, 0, 0.78);
+    bottom: 0;
+    color: #FFF;
+    display: block;
+    font-size: 12px;
+    padding: 3px;
+    position: absolute;
+    text-align: center;
+    width: 100%;
+}
+
+#tv, #grass,#wood,#filim,#rain,#sky {
+    position: relative; overflow: hidden;
+}
+
+#tv{ background: #FFF;}
+#grass{ background:#37820D;}
+#wood{ background:rgb(160, 87, 3);}
+#filim{ background: #000;}
+#rain{ background: #005ef5;}
+#sky{ background: rgb(0, 191, 254);}

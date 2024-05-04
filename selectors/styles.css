@@ -1,0 +1,31 @@
+/* styles.css */
+body {
+    background-color: #121212; /* Dark background */
+    color: #fff; /* Light text */
+    font-family: Arial, sans-serif; /* Font style */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.dropdown select {
+    padding: 10px 15px;
+    background-color: #333; /* Dark background for the dropdown */
+    color: #fff; /* Light color for the text */
+    border: none; /* Remove default border */
+    border-radius: 5px; /* Rounded corners */
+    outline: none; /* Remove focus outline */
+    cursor: pointer; /* Cursor pointer to indicate it's clickable */
+    width: 200px; /* Set a fixed width */
+}
+
+.dropdown select:focus {
+    box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.2); /* Soft glow effect on focus */
+}
+
+.dropdown option {
+    background-color: #131313; /* Darker background for options */
+    color: #fff; /* Light color for option text */
+}

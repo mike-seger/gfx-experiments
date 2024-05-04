@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+}
+
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = '11' // Use the appropriate Java version.
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://nexus.talanlabs.com/content/repositories/releases/"
+    }
+// https://nexus.talanlabs.com/content/repositories/releases/
+    flatDir {
+        dirs 'libs' // Assumes Java 3D libraries are stored in `libs/` under the project root.
+    }
+}
+
+dependencies {
+//    implementation 'org.scijava:vecmath:1.6.2'
+//    implementation 'org.scijava:j3dcore:1.6.2'
+//    implementation 'org.scijava:j3dutils:1.6.2'
+    implementation name: 'j3dcore'  // The actual name of the Java 3D core JAR file without the .jar extension.
+    implementation name: 'j3dutils' // The actual name of the Java 3D utils JAR file without the .jar extension.
+    implementation name: 'vecmath'  // The actual name of the VecMath JAR file without the .jar extension.
+    implementation name: 'gluegen-rt'
+    implementation name: 'gluegen-rt-natives-macosx-universal'
+    implementation name: 'jogl-all'
+    implementation name: 'jogl-all-natives-macosx-universal'
+}
+
+def mainClass = project.hasProperty('mainClass') ? project.getProperty('mainClass') : 'SpinningCube'
+def regex = ~"^.*[.]"
+def appName = mainClass - regex
+
+task fatJar(type: Jar) {
+
+    archiveBaseName.set(appName)
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+
+    duplicatesStrategy = 'exclude'
+
+    // Use a property to specify the main class, with a default if not provided.
+    manifest {
+        attributes 'Main-Class': mainClass
+    }
+}
+
+// Make fatJar the default task if you just want to call `gradle` without specifying tasks.
+defaultTasks 'fatJar'

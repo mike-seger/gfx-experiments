@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern Fill Based on Grayscale</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  canvas { display: block; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h2>Pattern Fill Based on Grayscale</h2>
+<input type="file" id="upload" accept="image/*"/>
+<div>
+  <canvas id="canvas"></canvas>
+</div>
+
+<script>
+document.getElementById('upload').addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      replaceWithPatterns(ctx, canvas.width, canvas.height);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function replaceWithPatterns(ctx, width, height) {
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const patterns = generatePatterns(); // Assume this function generates 32 different patterns
+  const blockSize = 4; // Size of each block to apply the same pattern
+
+  for (let y = 0; y < height; y += blockSize) {
+    for (let x = 0; x < width; x += blockSize) {
+      const blockAverage = calculateBlockAverage(imgData, x, y, blockSize, width);
+      const patternIndex = Math.floor(blockAverage / (256 / patterns.length)); // Divide grayscale into ranges
+      const pattern = patterns[patternIndex];
+      applyPatternToBlock(ctx, pattern, x, y, blockSize);
+    }
+  }
+}
+
+function generatePatterns() {
+  // Placeholder: implement actual pattern generation or loading
+  let patterns = [];
+  for (let i = 0; i < 16; i++) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 8; // Example size
+    const ctx = canvas.getContext('2d');
+    // Example pattern: alternating black and white based on index
+    ctx.fillStyle = i % 2 === 0 ? 'black' : 'white';
+    ctx.fillRect(0, 0, 8, 8);
+    patterns.push(ctx.createPattern(canvas, 'repeat'));
+  }
+  return patterns;
+}
+
+function calculateBlockAverage(imgData, startX, startY, blockSize, imgWidth) {
+  let total = 0;
+  let count = 0;
+  for (let y = 0; y < blockSize; y++) {
+    for (let x = 0; x < blockSize; x++) {
+      const idx = ((startY + y) * imgWidth + (startX + x)) * 4;
+      const gray = 0.299 * imgData.data[idx] + 0.587 * imgData.data[idx + 1] + 0.114 * imgData.data[idx + 2];
+      total += gray;
+      count++;
+    }
+  }
+  return total / count;
+}
+
+function applyPatternToBlock(ctx, pattern, x, y, size) {
+  ctx.fillStyle = pattern;
+  ctx.fillRect(x, y, size, size);
+}
+</script>
+</body>
+</html>

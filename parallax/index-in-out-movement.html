@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Offscreen Canvas Manipulation</title>
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: black;
+    }
+    canvas {
+        background-color: white;
+        width: 70vw;
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+</style>
+</head>
+<body>
+<canvas id="targetCanvas"></canvas>
+<script>
+    const WIDTH = 1920
+    const HEIGHT = 1080
+
+    const offscreen = new OffscreenCanvas(WIDTH, HEIGHT)
+    const ctxOffscreen = offscreen.getContext('2d')
+    const offscreen2 = new OffscreenCanvas(WIDTH, HEIGHT)
+    const ctxOffscreen2 = offscreen2.getContext('2d')
+
+    const targetCanvas = document.getElementById('targetCanvas')
+    const ctxTarget = targetCanvas.getContext('2d')
+    targetCanvas.width = WIDTH
+    targetCanvas.height = HEIGHT
+
+    const LINE_WIDTH = 16
+    const LINE_SPACING = 2 * LINE_WIDTH
+    const RADIUS_FACTOR = 0.35
+    const RADIUS_ASPECT = WIDTH / HEIGHT
+    let offset = 2.5
+    const OFFSET_INCREMENT = 1.95
+
+    function drawLinesOnOffscreen(offset) {
+        ctxOffscreen.clearRect(0, 0, offscreen.width, offscreen.height)
+        ctxOffscreen.strokeStyle = 'black'
+        ctxOffscreen.lineWidth = LINE_WIDTH
+
+        const diagonal = Math.sqrt(offscreen.width ** 2 + offscreen.height ** 2)
+        const lineCount = Math.ceil(diagonal / LINE_SPACING)
+
+        for (let i = -lineCount; i < lineCount; i++) {
+            let x = i * LINE_SPACING + offset
+            ctxOffscreen.save()
+            ctxOffscreen.translate(offscreen.width / 2, offscreen.height / 2)
+            ctxOffscreen.rotate(Math.PI / 4)
+            ctxOffscreen.beginPath()
+            ctxOffscreen.moveTo(x, -diagonal)
+            ctxOffscreen.lineTo(x, diagonal)
+            ctxOffscreen.stroke()
+            ctxOffscreen.restore()
+        }
+    }
+
+    function animateOffscreen() {
+        offset += OFFSET_INCREMENT
+        if (offset > LINE_SPACING) offset -= LINE_SPACING
+        drawLinesOnOffscreen(offset)
+        requestAnimationFrame(animateOffscreen)
+    }
+
+    function updateTargetCanvas() {
+        ctxTarget.clearRect(0, 0, targetCanvas.width, targetCanvas.height)
+
+        // Quadrant 1
+        ctxTarget.drawImage(offscreen, 
+            0, 0, offscreen.width / 2, offscreen.height / 2, 
+            0, 0, targetCanvas.width / 2, targetCanvas.height / 2)
+
+        // Quadrant 2
+        ctxTarget.save()
+        ctxTarget.scale(-1, 1)
+        ctxTarget.drawImage(offscreen, 
+            0, 0, offscreen.width / 2, offscreen.height / 2, 
+            -targetCanvas.width, 0, targetCanvas.width / 2, targetCanvas.height / 2)
+        ctxTarget.restore()
+
+        // Quadrant 3
+        ctxTarget.save()
+        ctxTarget.scale(1, -1)
+        ctxTarget.drawImage(offscreen, 
+            0, 0, offscreen.width / 2, offscreen.height / 2, 
+            0, -targetCanvas.height, targetCanvas.width / 2, targetCanvas.height / 2)
+        ctxTarget.restore()
+
+        // Quadrant 4
+        ctxTarget.save()
+        ctxTarget.scale(-1, -1)
+        ctxTarget.drawImage(offscreen, 
+            0, 0, offscreen.width / 2, offscreen.height / 2, 
+            -targetCanvas.width, -targetCanvas.height, targetCanvas.width / 2, targetCanvas.height / 2)
+        ctxTarget.restore()
+    }
+
+    function updateOffscreen2Canvas() {
+        ctxOffscreen2.clearRect(0, 0, offscreen2.width, offscreen2.height)
+
+        // Quadrant 1
+        ctxOffscreen2.save()
+        ctxOffscreen2.scale(-1, -1)
+        ctxOffscreen2.drawImage(offscreen, 
+            0, 0, offscreen.width / 2, offscreen.height / 2, 
+            -offscreen2.width / 2, -offscreen2.height / 2, offscreen2.width / 2, offscreen2.height / 2)
+        ctxOffscreen2.restore()
+
+        // Quadrant 2
+        ctxOffscreen2.save()
+        ctxOffscreen2.scale(1, -1)
+        ctxOffscreen2.drawImage(offscreen, 
+            0, 0, offscreen.width / 2, offscreen.height / 2, 
+            offscreen2.width / 2, -offscreen2.height / 2, offscreen2.width / 2, offscreen2.height / 2)
+        ctxOffscreen2.restore()
+
+        // Quadrant 3
+        ctxOffscreen2.drawImage(offscreen, 
+            0, 0, offscreen.width / 2, offscreen.height / 2, 
+            offscreen.width / 2, offscreen2.height / 2, offscreen2.width / 2, offscreen2.height / 2)
+
+        // Quadrant 4
+        ctxOffscreen2.save()
+        ctxOffscreen2.scale(-1, 1)
+        ctxOffscreen2.drawImage(offscreen, 
+            0, 0, offscreen.width / 2, offscreen.height / 2, 
+            -offscreen2.width / 2, offscreen2.height / 2, offscreen2.width / 2, offscreen2.height / 2)
+        ctxOffscreen2.restore()
+
+        const radius = offscreen2.height * RADIUS_FACTOR
+
+        ctxTarget.save()
+        ctxTarget.beginPath()
+        ctxTarget.ellipse(targetCanvas.width / 2, targetCanvas.height / 2, radius*RADIUS_ASPECT, radius, 0, 0, Math.PI * 2, true)
+        ctxTarget.clip()
+        ctxTarget.clearRect(0, 0, targetCanvas.width, targetCanvas.height)
+        ctxTarget.restore()
+
+        ctxTarget.save()
+        ctxTarget.beginPath()    
+        ctxTarget.ellipse(targetCanvas.width / 2, targetCanvas.height / 2, radius*RADIUS_ASPECT, radius, 0, 0, Math.PI * 2, true)
+        ctxTarget.clip()
+
+        ctxTarget.drawImage(offscreen2, 0, 0, offscreen2.width, offscreen2.height, 0, 0, targetCanvas.width, targetCanvas.height)
+
+        ctxTarget.restore()
+    }
+
+    animateOffscreen() // Start the offscreen animation
+    setInterval(() => { updateTargetCanvas(); updateOffscreen2Canvas() }, 1000 / 25); // Update target canvas at approximately 25fps
+
+</script>
+</body>
+</html>

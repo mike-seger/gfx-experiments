@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload OBJ and MTL Files</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background-color: black; color: white; overflow: hidden; }
+        canvas { width: 100%; height: 100vh; display: block;background-color: black; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/MTLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/OBJLoader.js"></script>
+</head>
+<body>
+    Load OBJ file to display<br>
+    <input type="file" id="fileInput" multiple accept=".obj,.mtl">
+    <canvas id="canvas"></canvas>
+    <script>
+        var scene, camera, renderer;
+        const objects = []
+        const mtlLoader = new THREE.MTLLoader();
+        const objLoader = new THREE.OBJLoader();
+
+        init();
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect, false);
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas') });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            var ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
+            scene.add(ambientLight);
+            var directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 0).normalize();
+            scene.add(directionalLight);
+
+            camera.position.z = 5;
+
+        }
+
+        function handleFileSelect(event) {
+            const files = event.target.files
+
+            for (let i = 0, f; f = files[i]; i++) {
+                if (f.name.endsWith('.mtl')) {
+                    const reader = new FileReader();
+                    reader.onload = (function(theFile) {
+                        return function(e) {
+                            mtlLoader.parse(e.target.result, '', (materials) => {
+                                materials.preload();
+                                objLoader.setMaterials(materials);
+                            });
+                        };
+                    })(f);
+                    reader.readAsText(f);
+                }
+            }
+
+            for (let i = 0, f; f = files[i]; i++) {
+                if (f.name.endsWith('.obj')) {
+                    readObjFile(objLoader, f)
+                }
+            }
+        }
+
+        function readObjFile(objLpader, file) {
+            const reader = new FileReader();
+            reader.onload = (function(theFile) {
+                return function(e) {
+                    const object = objLoader.parse(e.target.result)
+                    objects.forEach((obj) => {scene.remove(obj)})
+                    objects.push(object)
+                    scene.add(object);
+                    //normalizeAndCenter(object);
+                    animate();
+                };
+            })(file);
+            reader.readAsText(file);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        function normalizeAndCenter(object) {
+            // Compute the bounding box of the object
+            const box = new THREE.Box3().setFromObject(object);
+
+            // Calculate the size and center of the box
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            // Calculate the maximum dimension
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 1.0 / maxDim;  // Normalize the scale
+
+            // Scale the object
+            object.scale.multiplyScalar(scale);
+
+            // Translate the object to center it
+            object.position.sub(center);
+
+            console.log("Object scaled to fit within a unit cube and centered at the origin.");
+
+            // Update the camera to view the object
+            updateCamera(box, center, scale);
+        }
+
+        function updateCamera(box, center, scale) {
+            // Set a position for the camera that's a reasonable distance based on the object size
+            const maxBoxSize = Math.max(box.getSize(new THREE.Vector3()).length() * scale);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxBoxSize / Math.tan(fov / 2)) * 2; // Adjust factor as needed
+
+            camera.position.set(center.x, center.y, cameraZ);
+            camera.lookAt(center);
+
+            // Adjust near and far planes
+            camera.near = cameraZ / 10;  // Closer than this is near plane
+            camera.far = cameraZ * 10;   // Further than this is far plane
+            camera.updateProjectionMatrix();
+
+            console.log("Camera set to look at the center:", center);
+            console.log("Camera position set to:", camera.position);
+        }
+
+        // var objLoader = new THREE.OBJLoader();
+        // // Load the object and call normalization and centering
+        // objLoader.load('../3d-generation/java/obj/cactus.obj', function (object) {
+        //     scene.add(object);
+        //     normalizeAndCenter(object);
+        //     animate();
+        // });
+
+
+    </script>
+</body>
+</html>

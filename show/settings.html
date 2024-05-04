@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../sliders/SingleSlider.css">
+    <link rel="stylesheet" href="../sliders/MinMaxSlider.css">
+    <link rel="stylesheet" href="../selectors/Selector.css">
+    <style>
+        .inputLabel {
+            font: bold 16px helvetica, arial;
+            color: white;
+            height: 7px;
+            display: inline-block;
+            margin-bottom: 16px;
+            width: 100px;
+            text-align: right;
+            margin-right: 44px;
+        }
+
+        .slider-label, .value-display {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="objectType"></div>
+    <div id="pixelSize"></div>
+    <div id="velocity"></div>
+	<div id="objectSize"></div>
+    <div id="objectCount"></div>
+    <div id="color1"></div>
+    <div id="color2"></div>
+
+    <script type="module">
+        import Selector from '../selectors/Selector.js'
+        import ColorSelector from '../selectors/ColorSelector.js'
+        import MinMaxSlider from '../sliders/MinMaxSlider.js'
+        import SingleSlider from '../sliders/SingleSlider.js'
+
+        const models = ["Sphere", "Cube", "cursor-16x16", "cursor-32x32"]
+        let settings = null
+
+        let objectType = null
+        let pixelSize = null
+        let velocity = null
+        let objectSize = null
+        let objectCount = null
+        let color1 = null
+        let color2 = null
+
+        function initSettings(settings) {
+            objectType = new Selector('objectType', 'Object Type', models, settings.objectType)
+            objectSize = new MinMaxSlider('objectSize', 'Object Size', 150, 2, 80, settings.minDiameterPercent, settings.maxDiameterPercent)
+            objectCount = new SingleSlider('objectCount', 'Object Count', 150, 1, 500, settings.objectCount)
+            pixelSize = new SingleSlider('pixelSize', 'Pixel Size', 150, 1, 200, settings.pixelSize)
+            velocity = new MinMaxSlider('velocity', 'Velocity', 150, 1, 100, settings.minVelocity, settings.maxVelocity)
+            color1 = new ColorSelector('color1', 'Color 1', settings.color1)
+            color2 = new ColorSelector('color2', 'Color 2', settings.color2)
+
+            objectType.addListener(() => { applySettings() })
+            objectSize.addListener(() => { applySettings() })
+            objectCount.addListener(() => { applySettings() })
+            pixelSize.addListener(() => { applySettings() })
+            velocity.addListener(() => { applySettings() })
+            color1.addListener(() => { applySettings() })
+            color2.addListener(() => { applySettings() })
+        }
+
+        window.addEventListener('message', receiveMessage, false)
+
+        function receiveMessage(event) {
+            this.settings = event.data
+            initSettings(this.settings)
+        }
+
+        function applySettings() {
+            settings = {
+                color1: color1.value,
+                color2: color2.value,
+                objectType: objectType.value,
+                minDiameterPercent: objectSize.curMinValue,
+                maxDiameterPercent: objectSize.curMaxValue,
+                minVelocity: velocity.curMinValue,
+                maxVelocity: velocity.curMaxValue,
+                objectCount: objectCount.value,
+                pixelSize: pixelSize.value
+            }
+
+            //console.log(settings)
+            window.parent.postMessage(settings, '*')
+        }
+    </script>
+
+</body>
+</html>

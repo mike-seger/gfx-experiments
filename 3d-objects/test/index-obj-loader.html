@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Pixel Model from Image</title>
+    <style>
+        body { margin: 0; background-color: black; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100vh; }
+    </style>
+</head>
+<body>
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.164.1/three.module.min.js",
+            "three/examples/jsm/": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.164.1/examples/jsm/",
+            "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2.0.0/lib/three-vrm.module.min.js",
+            "verse-three": "https://cdn.jsdelivr.net/npm/@verseengine/verse-three@1.0.6/dist/esm/index.min.js",
+            "./index": "./index.js"
+          }
+        }
+    </script>
+    <script type="module">
+    import * as THREE from 'three';
+    import { PixelModelCreator } from '../PixelModelCreator.js'
+
+    let camera, scene, renderer, cubes;
+    let showAxis = false
+    const imgUrl = '../../images/cursor-16x16.png'
+    //const imgUrl = '../../images/cursor-32x32.png'
+    //const imgUrl = '../../images/cursor-64x64.png'
+
+    PixelModelCreator.createPixelModel(imgUrl, 0.1, 1, null, "#000000"/*, "#888888"*/).then(cubes => {
+        init(cubes)
+        scene.add(cubes)
+        animate()
+    })
+
+    function init(cubes) {
+        scene = new THREE.Scene()
+
+        const aspect = window.innerWidth / window.innerHeight
+        const frustumSize = 1.25
+
+        camera = new THREE.OrthographicCamera(
+            frustumSize * aspect / -2,
+            frustumSize * aspect / 2,
+            frustumSize / 2,
+            frustumSize / -2,
+            1.1,
+            1000
+        )
+
+        renderer = new THREE.WebGLRenderer()
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        document.body.appendChild(renderer.domElement)
+
+        if(showAxis) {
+            scene.add(new THREE.AxesHelper(5))
+        }
+
+        camera.position.set(0, 2, -3)
+    }
+
+    let startTime = Date.now();
+    function animate() {
+        requestAnimationFrame(animate);
+
+        let elapsed = (Date.now() - startTime) / 1000
+        let angle = (elapsed * 2 * Math.PI) / 3
+        let radius = 10
+        camera.position.x = radius * Math.cos(angle)
+        camera.position.z = radius * Math.sin(angle)
+        camera.lookAt(new THREE.Vector3(0,0,0))
+
+        renderer.render(scene, camera)
+    }
+    </script>
+</body>
+</html>

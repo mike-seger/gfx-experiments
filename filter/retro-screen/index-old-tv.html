@@ -1,0 +1,25 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>Old TV and VCR Effects in JS and CSS</title>
+      <link rel="stylesheet" href="style.css">
+</head>
+  
+<body translate="no">
+<div class="screen-container">
+    <div class="screen-wrapper">
+        <div class="screen-wrapper wobbley">
+            <div class="screen-wrapper">
+                <div id="screen">
+                    <img class="image" src="tank.jpeg">
+                </div>
+            </div>
+            <div class="scanlines"></div>
+            <canvas class="vcr" width="640" height="360" style="filter: blur(1px); opacity: 0.7;"></canvas>
+            <canvas class="snow" width="320" height="180" style="opacity: 0.2;"></canvas>
+        </div>
+    </div>
+    <div class="vignette"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+<script src="script.js"></script>
+</body></html>

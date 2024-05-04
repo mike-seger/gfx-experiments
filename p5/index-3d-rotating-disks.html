@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.capture@1.4.1/dist/p5.capture.umd.min.js"></script>
+  <style>
+    body {
+        overflow: hidden;
+        margin: 0;
+        padding: 200px;
+        background-color: black;
+    }
+
+    canvas { 
+        max-width: 48vw; 
+        max-height: 27vw; 
+        border: 1px solid black;
+        display: inline-block;
+    }
+  </style>
+</head>
+<body>
+    <script>
+        const INITIAL_PAUSE_MS = 500
+        const FRAMERATE = 60
+        const PAUSE_ANGLE = 90
+        const ANGLE_RAMP = 10
+        const LOOP_ANGLE = 2*PAUSE_ANGLE
+        const ANGLE_DELTA = PAUSE_ANGLE/FRAMERATE
+        const W = 1980
+        const H = 1024
+        const COLOR_0 = "#1944b3"
+        const COLOR_1 = "#75bfff"
+        const DISK_RADIUS = Math.min(W, H)/2.5 - 5
+        const DISK_THICKNESS = 0.0001
+
+        let angle=0;
+        let captured = false;
+        let stopAtNext = false
+        let pausing = false
+
+        let sourceCanvas = null
+        let targetCanvas = null
+
+        let captureOptions = {
+            format: "mp4",
+            framerate: FRAMERATE,
+            quality: 0.95,
+            width: W,
+            height: H
+        }
+        P5Capture.setDefaultOptions(captureOptions)
+
+        function endCapturing() {
+            const capture = P5Capture.getInstance();
+            if(stopAtNext && capture.state !== "idle") {
+                capture.stop();
+            } else if(capture.state !== "idle" && angle!=0 && angle>=LOOP_ANGLE) {
+                stopAtNext =true
+            }
+        }
+
+        function setup() {
+            sourceCanvas = createCanvas(W, H, WEBGL)
+            // targetCanvas = createCanvas(W, H)
+
+            angleMode(DEGREES)
+            camera(0, 580, 0.1, 0, 0, 0)
+            frameRate(FRAMERATE)
+
+            ortho()
+
+            const captureButton = document.querySelector(".p5c-btn")
+            captureButton.addEventListener("click", (event) => 
+            {
+                console.log("Clicked")
+                angle=0;
+                event.preventDefault()
+            })
+        }
+
+
+        function draw() {
+            if(pausing) return
+            content()          
+            endCapturing()
+            if(ANGLE_RAMP==0 && angle%PAUSE_ANGLE==0 && !pausing) {
+                pausing=true; 
+                setTimeout(() => { 
+                    angle += ANGLE_DELTA
+                    pausing=false 
+                }, INITIAL_PAUSE_MS);
+            } else if(ANGLE_RAMP!=0 && (angle%PAUSE_ANGLE>=PAUSE_ANGLE-ANGLE_RAMP
+                //|| angle%PAUSE_ANGLE <= ANGLE_RAMP
+            )) {
+                angle += ANGLE_DELTA/3
+            } else angle += ANGLE_DELTA
+        }
+
+        /*function draw() {
+            if(pausing) return
+            content()          
+            endCapturing()
+            if(angle%PAUSE_ANGLE==0 && !pausing) {
+                pausing=true; 
+                setTimeout(() => { 
+                    angle += ANGLE_DELTA
+                    pausing=false 
+                }, INITIAL_PAUSE_MS);
+            } else angle += ANGLE_DELTA
+        }*/
+
+        function content() {
+            background(255)
+            //const deltaError = (frameCount%3)/3
+            rotateZ(-angle%PAUSE_ANGLE+PAUSE_ANGLE)
+
+            translate(0, DISK_RADIUS, 0)
+            conditionalFill()
+            cylinder(DISK_RADIUS, DISK_THICKNESS, 360)
+
+            translate(DISK_RADIUS, -DISK_RADIUS, 0)
+            rotateZ(-PAUSE_ANGLE)
+            conditionalFill(PAUSE_ANGLE)
+            cylinder(DISK_RADIUS, DISK_THICKNESS, 360)
+        }
+
+        function conditionalFill(offset=0) {
+            (angle+offset)%LOOP_ANGLE>=PAUSE_ANGLE?
+                fill(COLOR_0):
+                fill(COLOR_1)
+        }
+    </script>
+</body>
+</html>

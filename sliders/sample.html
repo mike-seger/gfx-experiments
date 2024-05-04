@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="MinMaxSlider.css">
+    <script type="module" src="MinMaxSlider.js"></script>
+</head>
+<body>
+
+	<div id="pixelSize"></div>
+	<div id="pixelSize2"></div>
+
+    <script type="module">
+        import MinMaxSlider from './MinMaxSlider.js'
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const pixelSizeSlider = new MinMaxSlider('pixelSize', 'Pixel Size 99', 300, 100, 10000)
+			const pixelSizeSlider2 = new MinMaxSlider('pixelSize2', 'Pixel Size 2', 300, 5, 100)
+
+            pixelSizeSlider.addListener((min, max) => {
+                console.log(`Current Range: ${min} to ${max}`)
+            })
+        })
+    </script>
+</body>
+</html>

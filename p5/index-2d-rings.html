@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.capture@1.4.1/dist/p5.capture.umd.min.js"></script>
+  <style>
+    body {
+        background-color: black;
+    }
+  </style>
+</head>
+<body>
+    <script>
+        const numRings = 6;
+
+        P5Capture.setDefaultOptions({
+            format: "mp4",
+            framerate: 25,
+            quality: 0.95,
+            width: 1920,
+        });
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            angleMode(DEGREES);
+        }
+
+        function draw() {
+            background(220);
+            translate(windowWidth/2,windowHeight/2)
+            
+            for(let i=0;i<numRings;i++) {
+                rotate(60)
+                drawRing()
+            }
+        }
+
+        function drawRing() {
+            for(let angle=0;angle<360;angle+=10) {
+                const x=cos(frameCount+angle)*(windowWidth/10+windowWidth/8*sin(angle+frameCount/400))
+                const y=sin(frameCount/2+angle)*(windowWidth/10+windowWidth/6*cos(angle+frameCount/100))
+                fill(angle)
+                stroke(0)
+                strokeWeight(2)
+                ellipse(x,y,50);                
+            }
+        }
+    </script>
+</body>
+</html>

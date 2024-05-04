@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Autohome</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="iframe-navigator/navigation.css">
+</head>
+<body>
+
+<div id="sidenav">
+	<h3>GFX Experiments</h3>
+	
+	<!-- <a href="http://sonoff-basic-001/">sonoff-basic-001</a>
+	<a href="http://sonoff-printer/">sonoff-printer</a>
+	<a href="http://little-green-clock-1/">little-green-clock-1</a>
+	<a href="http://little-green-clock-2/">little-green-clock-2</a>
+	<a href="http://little-green-clock-3/">little-green-clock-3</a>
+	<a href="http://shelly-pm2-lounge/">shelly-pm2-lounge</a>
+	<a href="http://powerstrip-2/">powerstrip-2</a>
+	<a href="http://athom-smartbulb-1/">athom-smartbulb-1</a>
+	<a href="http://athom-smartbulb-2/">athom-smartbulb-2</a>
+	<a href="http://ulanzi-tc001-1/">ulanzi-tc001-1</a>
+	<a href="http://ulanzi-tc001-2/">ulanzi-tc001-2</a>
+	<a href="http://xy-wfusb-01/">xy-wfusb-01</a>
+	<a href="http://xy-wfusb-02/">xy-wfusb-02</a>
+	<a href="http://xy-wfusb-03/">xy-wfusb-03</a>
+	<a href="http://xy-wfusb-04/">xy-wfusb-04</a>
+	<a href="http://server1/devices/brother-dcp-l2530dw/general/status.html">brother-dcp-l2530dw</a>
+	<a href="http://homeassistant.local:8123/lovelace/0">home assistant</a>
+	<a href="http://server1/devices/marantz-nr1509/">marantz nr-1509</a>
+	<a href="http://denon-avr-1100w/SETUP/f_home.asp">denon-avr-1100w</a>
+	<a href="http://samsung-ue82nu8000:8001/api/v2/">samsung-ue82nu8000</a>
+	<a href="https://server1:8443/">unify (HTTPS)</a>
+	<a href="http://server1:8444/">unify</a> -->
+	
+</div>
+
+<!-- <scipt src="FileList.js" type="module"></scipt> -->
+<script type="module">
+	import * as DirInfo from "./FileList.js"
+
+	const sideNav = document.getElementById("sidenav")
+	const fileList = DirInfo.default.fileList
+	fileList.forEach((file, index) => {
+		if(file) {
+			console.log(file)
+			const anchor = document.createElement("a")
+			anchor.setAttribute("href", `${file}`)
+			const token = "/index-"
+			const pos = file.indexOf(token)
+			const path = file.substring(0, pos)
+			const name = file.substring(pos+token.length).replace(".html", "")
+			anchor.innerHTML = `${path} <b>${name}</b>`
+			sideNav.appendChild(anchor)
+		}
+	})
+</script>
+<script src="iframe-navigator/navigation.js"></script>
+</body>
+</html>

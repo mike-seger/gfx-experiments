@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Quantization Example</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  canvas { display: block; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h2>Color Quantization Example</h2>
+<input type="file" id="upload" accept="image/*"/>
+<div>
+    <canvas id="canvas"></canvas>
+  </div>
+  
+  <script>
+  class ColorCluster {
+      constructor() {
+          this.colors = [];
+          this.centroid = null;
+      }
+  
+      addColor(color) {
+          this.colors.push(color);
+      }
+  
+      calculateCentroid() {
+          if (this.colors.length === 0) return;
+          let sumR = 0, sumG = 0, sumB = 0;
+          this.colors.forEach(color => {
+              sumR += color.r;
+              sumG += color.g;
+              sumB += color.b;
+          });
+          this.centroid = {
+              r: Math.round(sumR / this.colors.length),
+              g: Math.round(sumG / this.colors.length),
+              b: Math.round(sumB / this.colors.length)
+          };
+      }
+  
+      reset() {
+          this.colors = [];
+      }
+  }
+  
+  function processImage(imgData, k) {
+      const clusters = initializeClusters(k);
+      let pixels = imgData.data;
+      let change = true;
+      let maxIterations = 10;
+      let currentIteration = 0;
+  
+      while (change && currentIteration < maxIterations) {
+          // Assign pixels to the nearest cluster
+          for (let i = 0; i < pixels.length; i += 4) {
+              let r = pixels[i];
+              let g = pixels[i + 1];
+              let b = pixels[i + 2];
+              let nearestCluster = findNearestCluster(clusters, { r, g, b });
+              nearestCluster.addColor({ r, g, b });
+          }
+  
+          // Recalculate centroids
+          change = false;
+          clusters.forEach(cluster => {
+              const oldCentroid = {...cluster.centroid};
+              cluster.calculateCentroid();
+              if (!isCentroidSame(oldCentroid, cluster.centroid)) {
+                  change = true;
+              }
+              cluster.reset();
+          });
+  
+          // Increment iteration count
+          currentIteration++;
+      }
+  
+      // Apply new centroids to image data
+      for (let i = 0; i < pixels.length; i += 4) {
+          let r = pixels[i];
+          let g = pixels[i + 1];
+          let b = pixels[i + 2];
+          let nearestCluster = findNearestCluster(clusters, { r, g, b });
+          pixels[i] = nearestCluster.centroid.r;
+          pixels[i + 1] = nearestCluster.centroid.g;
+          pixels[i + 2] = nearestCluster.centroid.b;
+      }
+  
+      return imgData;
+  }
+  
+  function initializeClusters(k) {
+      const clusters = [];
+      for (let i = 0; i < k; i++) {
+          clusters.push(new ColorCluster());
+          clusters[i].centroid = {
+              r: Math.floor(Math.random() * 255),
+              g: Math.floor(Math.random() * 255),
+              b: Math.floor(Math.random() * 255)
+          };
+      }
+      return clusters;
+  }
+  
+  function findNearestCluster(clusters, color) {
+      let minDistance = Number.MAX_VALUE;
+      let nearestCluster = null;
+      clusters.forEach(cluster => {
+          let distance = colorDistance(color, cluster.centroid);
+          if (distance < minDistance) {
+              minDistance = distance;
+              nearestCluster = cluster;
+          }
+      });
+      return nearestCluster;
+  }
+  
+  function colorDistance(color1, color2) {
+      return Math.sqrt(
+          Math.pow(color1.r - color2.r, 2) +
+          Math.pow(color1.g - color2.g, 2) +
+          Math.pow(color1.b - color2.b, 2)
+      );
+  }
+  
+  function isCentroidSame(centroid1, centroid2) {
+      return centroid1.r === centroid2.r &&
+             centroid1.g === centroid2.g &&
+             centroid1.b === centroid2.b;
+  }
+  
+  document.getElementById('upload').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+              const canvas = document.getElementById('canvas');
+              const ctx = canvas.getContext('2d');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              ctx.drawImage(img, 0, 0);
+              let imgData = ctx.getImageData(0, 0, img.width, img.height);
+              imgData = processImage(imgData, 16); // You can adjust the number of colors here
+              ctx.putImageData(imgData, 0, 0);
+          };
+          img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+  });
+  </script>
+  </body>
+  </html>
+  

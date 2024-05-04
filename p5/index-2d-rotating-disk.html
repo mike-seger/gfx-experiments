@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Two Canvas Example</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: black;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            color: white;
+            margin: 10px;
+        }
+        #canvases {
+            width: 100vw;
+        }
+        canvas {
+            width: 40vw;
+            /* border: 1px solid black; */
+            image-rendering: pixelated;
+            background-color: rgb(230, 235, 224);
+            padding: 50px;
+        }
+    </style>
+</head>
+<body>
+    <br>
+    <label>
+        Mono Color
+        <input type="color" value="#1414dc" id="mono-color">
+    </label>
+    <label>
+        Scale
+        <select id="scaleSelector"></select>
+    </label>
+    <br><br>
+    <div id="canvases"></div>
+    <script src="index-2d-rotating-disk.js"></script>
+    <script src="../filter/Dithering.js"></script>
+    <script src="../common/Utils.js"></script>
+</body>
+</html>
+

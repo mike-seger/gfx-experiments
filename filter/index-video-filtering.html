@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Processing with Scale and Effect Controls</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; color: white; background: black; }
+        h1 { margin:0; padding:0; }
+        #canvas, #video { display: inline-block; margin-top: 20px; max-width: 40%; vertical-align: top; }
+        #canvas { width: 40%; height: auto; image-rendering: pixelated; max-width: 40%; max-height: calc(100vh - 100px); }
+        .canvas-wide { width: 85%; max-width: 85%; }
+        /* #recordedVideo { width: 600px; max-height: 400px; } */
+        .save-row{ background: black !important; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"
+        integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg==" 
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+    </script>
+</head>
+<body>
+    <h1 id="title" style="display: block;">Video Processing with Scale and Filter Controls</h1>
+    <br>
+    <video id="video" controls muted autoplay loop></video>
+    <canvas id="canvas"></canvas>
+
+    <script src="../common/Utils.js"></script>
+    <script src="../filter/Dithering.js"></script>
+    <script type="module">
+        const maxVideos = 29
+        const videopfx = 'test'
+
+        const settings = {
+            video: 'test 01',
+            showOriginal: false,
+            scaling: '1 : 8',
+            filter: 'None',
+            smoothPixels: false,
+            blur: 0,
+            grayscale: 0,
+            contrast: 100,
+            brightness: 100,
+            invert: 0,
+            saturation: 100,
+            sepia: 0,
+            hueRotate: 0,
+            bitDepth: 8,
+            monoColor: "#000000"
+        }
+
+        const presetSystem = Object.assign({}, settings, {})
+        const presetBreezyFlames = Object.assign({}, settings, { scaling: '1 : 64', smoothPixels: true, contrast: 1000 })
+        const presetGlamour = Object.assign({}, presetBreezyFlames, { video: 'test 26' })
+        const presetAlienComms = Object.assign({}, presetBreezyFlames, { filter: 'Ordered Dither' })
+        const presetSquary = Object.assign({}, presetBreezyFlames, { brightness: 1000, bitDepth: 1 })
+        const presetQuadrants = Object.assign({}, presetSquary, { video: 'test 25' })
+        const presetDriving = Object.assign({}, presetAlienComms, { video: 'test 09' })
+        const presetNeurons = Object.assign({}, presetAlienComms, { video: 'test 10' })
+        const presetCoding = Object.assign({}, presetBreezyFlames, { video: 'test 24', filter: 'Floyd-Steinberg Filter', scaling: '1 : 16' })
+        const presetCrossing = Object.assign({}, presetBreezyFlames, { video: 'test 25' })
+        const presetCrossingOut = Object.assign({}, presetCrossing, { scaling: '1 : 32',  })
+        const presetA2B0 = Object.assign({}, presetBreezyFlames, { 
+            video: 'test 05', scaling: '1 : 16', filter: 'Sierra Dither', monoColor: '#1e1ee8', smoothPixels: false })
+        const presetA2B1 = Object.assign({}, presetBreezyFlames, { video: 'test 05', filter: 'Ordered Dither Color', hueRotate: 75 })
+        const presetA2B2 = Object.assign({}, presetA2B1, { filter: 'Floyd-Steinberg Filter' })
+
+        const presets = {
+            "preset": "Default",
+            "closed": false,
+            "remembered": {
+                " ": { "0": settings }, 
+                "System": { "0": presetSystem }, 
+                "Alient Comms": { "0": presetAlienComms },
+                "Driving": { "0": presetDriving },
+                "Neurons": { "0": presetNeurons },
+                "Coding": { "0": presetCoding },
+                "Breezy Flames": { "0": presetBreezyFlames },
+                "Squary": { "0": presetSquary },
+                "Quadrants": { "0": presetQuadrants },
+                "Glamour": { "0": presetGlamour },
+                "Crossing": { "0": presetCrossing },
+                "Crossing Out": { "0": presetCrossingOut },
+                "A to B 0": { "0": presetA2B0 },
+                "A to B 1": { "0": presetA2B1 },
+                "A to B 2": { "0": presetA2B2 }
+            },
+            "folders": {}
+        }
+
+        const datConfig = { width : 300, preset: "Default", load: presets }
+
+        let preventReplay = false
+        const title = document.getElementById('title')
+        const video = document.getElementById('video')
+        const canvas = document.getElementById('canvas')
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
+
+        setupControls(settings)
+        updateCanvasStyle()
+        videoChanged()
+        showOriginal(settings.showOriginal)
+
+        video.addEventListener('loadeddata', () => { updateCanvasSize() })
+
+        video.addEventListener('play', function play() {
+            function step() {
+                if (video.paused || video.ended) return
+                computeFrame()
+                requestAnimationFrame(step)
+            }
+            requestAnimationFrame(step)
+        })
+
+        function videoChanged() {
+            preventReplay = true
+            video.src = "../videos/" + settings.video.replace(" ", "-") + ".mp4"
+            video.load()
+            const isPlaying = video.currentTime > 0 && !video.paused && !video.ended 
+                && video.readyState > video.HAVE_CURRENT_DATA;
+            if (!isPlaying) video.play();
+        }
+
+        video.addEventListener('ended', function() {
+            if(preventReplay) {
+                preventReplay = false
+                return
+            }
+            this.currentTime = 0
+            const isPlaying = this.currentTime > 0 && !this.paused && !this.ended 
+                && this.readyState > this.HAVE_CURRENT_DATA;
+            if (!isPlaying) this.play();
+        }, false)
+
+        addPrevNextToSelects()
+
+        function showOriginal(show) {
+            video.style.display = show?'inline-block':'none'
+            title.style.display = show?'inline-block':'none'
+            setClass(canvas, !show, 'canvas-wide')
+            if(show) {
+                canvas.style.width = '40%'
+                canvas.style["max-width"] = '40%'
+            } else {
+                canvas.style.width = '80%'
+                canvas.style["max-width"] = '80%'
+            }
+        }
+
+        function updateCanvasStyle() {
+            canvas.style["image-rendering"] = settings.smoothPixels? 'auto':'pixelated'
+            const filter = `
+                grayscale(${settings.grayscale}%) 
+                contrast(${settings.contrast}%)
+                brightness(${settings.brightness}%)
+                saturate(${settings.saturation}%)
+                sepia(${settings.sepia}%)
+                hue-rotate(${settings.hueRotate}deg)
+                invert(${settings.invert}%)
+                blur(${settings.blur}px)
+                `
+                .replace("\n", " ").replace(/ [ ]*/g, " ")
+            canvas.style["filter"] = filter
+        }
+
+        function updateCanvasSize() {
+            var ctx = canvas.getContext('2d')
+
+            const expression = settings.scaling.replace(/[ ]/g, '').replace(':', '/')
+            const currentScale = eval(expression)
+
+            canvas.width = Math.max(1, video.videoWidth * currentScale)
+            canvas.height = Math.max(1, video.videoHeight * currentScale)
+            
+            ctx.imageSmoothingEnabled = settings.smoothPixels
+            ctx.mozImageSmoothingEnabled = settings.smoothPixels
+            ctx.webkitImageSmoothingEnabled = settings.smoothPixels
+            ctx.msImageSmoothingEnabled = settings.smoothPixels
+        }
+
+        function computeFrame() {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+            let frame = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            const data = frame.data
+            if(settings.bitDepth<8 && (settings.bitDepth>1 || !settings.grayscale)) 
+                applyColorReduction(data, settings.bitDepth)
+
+            const theFrame = {data: data, width: frame.width, height :frame.height }
+            if(settings.filter === 'Convolution') {
+                applyEdgeDetectioen(theFrame)
+            } else {
+                const filterFunction = "apply"+settings.filter.replace(/[- ]/g,"")
+                if (typeof window[filterFunction] === 'function')
+                    window[filterFunction](theFrame, hexToRgb(settings.monoColor)) 
+            } 
+
+            ctx.putImageData(frame, 0, 0)
+        }
+
+        function setupControls(settings) {
+            const gui = new dat.GUI(datConfig)
+            gui.useLocalStorage = false
+            gui.remember(settings)
+            const videos = []
+            for (let i = 1; i <= maxVideos; i++) {
+                const num=String(i).padStart(2, '0')
+                videos.push(`${videopfx} ${num}`)
+            }
+            gui.add(settings, 'video', videos ).onChange(() => { videoChanged() })
+            gui.add(settings, 'showOriginal').onChange(() => { showOriginal(settings.showOriginal) })
+            gui.add(settings, 'filter', [
+                'None',
+                'Ordered Dither',
+                'Ordered Dither 16x16',
+                'Ordered Dither Color',
+                'Floyd-Steinberg Filter',
+                'Stucki Dither',
+                'Atkinson Dither',
+                'Sierra Dither',
+                'Blue Noise Dither',
+                'Random Dither',
+                //'Convolution'
+            ] )
+
+            const scalings = []
+            for (let i = 0; i <= 8; i++) {
+                const divisor = Math.pow(2, i)
+                scalings.push(`1 : ${divisor}`)
+            }
+            gui.add(settings, 'scaling', scalings ).onChange(() => { updateCanvasSize() })
+            gui.add(settings, 'smoothPixels').onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'grayscale', 0, 100).step(1).onChange(() => { updateCanvasStyle() })
+            gui.addColor(settings, "monoColor")
+            gui.add(settings, 'contrast', 0, 1000).step(1).onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'brightness', 0, 4000).step(1).onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'blur', 0, 32).step(1).onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'invert', 0, 100).step(1).onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'saturation', 0, 1000).step(1).onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'sepia', 0, 1000).step(1).onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'hueRotate', 0, 360).step(1).onChange(() => { updateCanvasStyle() })
+            gui.add(settings, 'bitDepth', 1, 8).step(1).onChange(() => { updateCanvasStyle() })
+        }
+    </script>
+</body>
+</html>
