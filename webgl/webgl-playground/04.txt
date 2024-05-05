@@ -1,0 +1,358 @@
+@info
+Procedural penrose tiling
+2011 (C) Tomasz Dobrowolski
+http://moonedit.com/tom
+
+@libs
+http://webglplayground.net/libs/jquery-1.6.2.min.js
+http://webglplayground.net/libs/gl-matrix-min.js
+
+@main
+// The JQuery library facilitates DOM operations and normalizes parameters for input events across the browsers
+var gl = $('<canvas/>').appendTo($('#'+containerId)).attr('width', viewportWidth).attr('height', viewportHeight)[0].getContext('experimental-webgl');
+
+gl.clearColor(0.0, 0.0, 0.0, 1.0);
+gl.enable(gl.DEPTH_TEST);
+
+// create buffer with a rectangle
+var vertexPositionsBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionsBuffer);
+var vertexPositions = [
+  1.0, 1.0, 0.0,
+  -1.0, 1.0, 0.0,
+  1.0, -1.0, 0.0,
+  -1.0, -1.0, 0.0
+];
+
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositions), gl.STATIC_DRAW);
+vertexPositionsBuffer.itemSize = 3;
+vertexPositionsBuffer.numItems = 4;
+
+// create buffer with texture coordinates
+var textureCoordinatesBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinatesBuffer);
+var s = 1.0;
+var t = (1.0 - viewportHeight/viewportWidth)*.5;
+var textureCoordinates = [
+  s, t,
+  0.0, t,
+  s, 1.0-t,
+  0.0, 1.0-t
+];
+
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
+textureCoordinatesBuffer.itemSize = 2;
+textureCoordinatesBuffer.numItems = 4;
+
+var modelViewMatrix = mat4.create();
+var projectionMatrix = mat4.create();
+
+var texture = createTexture("http://webglplayground.net/samples/concrete1.jpg");
+var program = createShaderProgram(vertexPositionsBuffer, textureCoordinatesBuffer);
+gl.useProgram(program);
+
+/*
+ * for a complete list of JQuery keyboard and mouse events see:
+ * keyboard events: http://api.jquery.com/category/events/keyboard-events/
+ * mouse events: http://api.jquery.com/category/events/mouse-events/
+ *
+ * alternatively you can use document.addEventListener for 'mousedown', 'touchstart', 'keydown' etc.
+ * e.g., document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+ */
+$(document).keydown( function(event) {
+  event.preventDefault();
+  var key = event.which;
+});
+
+$(document).mousemove( function(event) {
+  event.preventDefault();
+  // transforming cursor coordinates to [-1.0, 1.0] range
+  // [0,0] being in the left bottom corner to match the vertex coordinates
+  var x = (event.pageX / viewportWidth)*2.0 - 1.0;
+  var y = 0.0 - ((event.pageY / viewportHeight)*2.0 - 1.0);
+  gl.uniform2f(program.mouseUniform, x, y);
+});
+
+$(document).mousedown( function(event) {
+  event.preventDefault();
+  var key = event.which;
+  var x = event.pageX;
+  var y = event.pageY;
+  if (key==1) {
+    gl.uniform1i(program.mouseLeftUniform, 1);
+  }
+});
+
+$(document).mouseup( function(event) {
+  event.preventDefault();
+  var key = event.which;
+  if (key==1) {
+    gl.uniform1i(program.mouseLeftUniform, 0);
+  }
+});
+
+$(document).mouseleave( function(event) {
+  event.preventDefault();
+  gl.uniform2f(program.mouseUniform, 0, 0);
+});
+
+function createShaderProgram(vertexPositionsBuffer, textureCoordinatesBuffer) {
+  // create vertex shader
+  var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vertexShader, glsl_vs1);
+  gl.compileShader(vertexShader);
+  if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+    alert(gl.getShaderInfoLog(vertexShader));
+  }
+  
+  // create fragment shader
+  var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fragmentShader, glsl_fs1);
+  gl.compileShader(fragmentShader);
+  if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+    alert(gl.getShaderInfoLog(fragmentShader));
+  }
+  
+  // create and use program
+  var program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      alert(gl.getProgramInfoLog(program));
+  }
+  
+  // vertex attribute [position]
+  program.vertexPositionAttribute = gl.getAttribLocation(program, "aVertexPosition");
+  gl.enableVertexAttribArray(program.vertexPositionAttribute);
+  //gl.vertexAttribPointer(program.vertexPositionAttribute, vertexPositionsBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  
+  // vertex attribute [texture coordinates]
+  program.textureCoordinatesAttribute = gl.getAttribLocation(program, "aTextureCoordinates");
+  gl.enableVertexAttribArray(program.textureCoordinatesAttribute);
+  //gl.vertexAttribPointer(program.textureCoordinatesAttribute, textureCoordinatesBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  
+  // uniform variables [modelViewMatrix and projectionMatrix]
+  program.mvMatrixUniform = gl.getUniformLocation(program, "modelViewMatrix");
+  program.pMatrixUniform = gl.getUniformLocation(program, "projectionMatrix");
+  program.tex0Uniform = gl.getUniformLocation(program, "tex0");
+  program.timeUniform = gl.getUniformLocation(program, "time");
+  program.mouseUniform = gl.getUniformLocation(program, "mouse");
+  program.mouseLeftUniform = gl.getUniformLocation(program, "mouseLeft");
+
+  return program;
+}
+
+function createTexture(url) {
+  var texture = gl.createTexture();
+  texture.image = new Image();
+  texture.image.onload = function() {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+  texture.image.src = url;
+  return texture;
+}
+
+function updateMatrices(program, mvMatrix, pMatrix) {
+  gl.uniformMatrix4fv(program.pMatrixUniform, false, pMatrix);
+  gl.uniformMatrix4fv(program.mvMatrixUniform, false, mvMatrix);
+}
+
+function updateTexture(program, texture) {
+  gl.uniform1i(program.tex0Uniform, 0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+}
+
+function updateTime(program, time) {
+  gl.uniform1f(program.timeUniform, time);
+}
+
+function frame(runningTime, deltaTime) {
+  gl.viewport(0, 0, viewportWidth, viewportHeight);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  //mat4.perspective(45, viewportWidth/viewportHeight, 0.1, 100.0, projectionMatrix);
+  mat4.ortho(-1.0, 1.0, -1.0, 1.0, 0.1, 100.0, projectionMatrix);
+  mat4.identity(modelViewMatrix);
+  mat4.translate(modelViewMatrix, [0.0, 0.0, -2.0]);
+  
+  updateMatrices(program, modelViewMatrix, projectionMatrix);
+  updateTexture(program, texture);
+  updateTime(program, runningTime);
+  
+  // plug buffers to the corresponding vertex attributes
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionsBuffer);
+  gl.vertexAttribPointer(program.vertexPositionAttribute, vertexPositionsBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinatesBuffer);
+  gl.vertexAttribPointer(program.textureCoordinatesAttribute, textureCoordinatesBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionsBuffer.numItems);
+}
+
+@glsl_vs1
+attribute vec3 aVertexPosition;
+attribute vec2 aTextureCoordinates;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+varying vec2 vTextureCoordinates;
+varying vec2 pos;
+
+void main() {
+  vTextureCoordinates = aTextureCoordinates;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(aVertexPosition, 1.0);
+  pos = vec2(aVertexPosition.x, aVertexPosition.y);
+}
+
+@glsl_fs1
+#ifdef GL_ES
+precision highp float;
+#endif
+
+varying vec2 vTextureCoordinates;
+
+varying vec2 pos;
+
+uniform float time;
+uniform vec2 mouse;
+uniform int mouseLeft;
+uniform sampler2D tex0;
+  
+void main() {
+// Procedural penrose tiling
+// 2011 (C) Tomasz Dobrowolski
+// http://moonedit.com/tom
+
+// This is based on Robinson substitution,
+// prototiles are two iosceles triangles,
+// type 0 with angles: 36, 36, 108 deg.
+// type 1 with angles: 72, 72, 36 deg.
+  
+   const int levels = 9;         // number of substitutions
+   const float sc = 1.6180339887498947; // = 2.0/(sqrt(5.0)-1.0) (inflation scale)
+   const float pi = 3.1415926535897931;
+   
+   // transformations constants:
+  
+   const float d1 = 1.3763819204711734; // = tan(54*pi/180)
+   const float d2 = 0.32491969623290629; // = tan(18*pi/180)
+   const float a1 = 0.61803398874989479; // = .5/cos(36*pi/180)
+   const float a2 = 0.80901699437494745; // = (1+a1)*.5
+   const float a3 = 0.5877852522924728; // = tan(36*pi/180)*a2
+   const float cos1 = -1.3090169943749466; // = cos(144*PI/180)*sc
+   const float sin1 = 0.95105651629515331; // = sin(144*PI/180)*sc
+   const float cos2 = -0.5; // = cos(108*PI/180)*sc
+   const float sin2 = 1.5388417685876261; // = sin(108*PI/180)*sc
+
+   int type;
+   float x, y, xx, yy, co, si;
+  
+  type = 0;
+  
+  // simple roto-zooming:
+  co = cos(time*.6)*.5;
+  si = sin(time)*.5;
+  xx = vTextureCoordinates.s - .5;
+  yy = vTextureCoordinates.t - .5;
+  x = xx*co + yy*si + .8;
+  y = -xx*si + yy*co;
+  y = abs(y);
+
+  type = 0; // starting triangle type
+  
+  for (int k=0; k<levels; k++)  // iterate all subsitutions
+  {
+     if (type == 0) 
+     {
+        // We substitute triangle type 0
+        // with three possible triangles.
+        // We detect in which of those three
+        // triangle our current (x,y) lies
+        // by checking line equations separating them:
+        
+        if (1.0 - d1*y - x > 0.0) // left triangle
+        {         
+           // only translation/mirror here:
+           x = (1.0 - x)*sc;
+           y = y*sc;            
+        } 
+        else if (1.0 - d2*y - x > 0.0) // middle triangle
+        {
+           
+           // translate:
+           xx = x - a2;     
+           yy = y - a3;
+           
+           // rotate:
+           x = xx*cos1 - yy*sin1;
+           y = xx*sin1 + yy*cos1;
+           
+           type = 1; // tile type changes here!         
+        } 
+        else // right triangle
+        {      
+           // translate (x only):
+           xx = x - (1.0+a1);
+           yy = y;
+        
+           // rotate:
+           x =  xx*cos1 + yy*sin1;
+           y = -xx*sin1 + yy*cos1;         
+        }      
+     } 
+     else 
+     {
+        // We substitute triangle type 1 with 
+        // two possible triangles (analogically).
+  
+        if (d1*y - x > 0.0) { // upper triangle
+        
+           // rotate only
+           xx = x; 
+           yy = y;
+           x = -xx*cos2 + yy*sin2;
+           y =  xx*sin2 + yy*cos2;
+                    
+           type = 0; // tile type changes here!
+           
+        } else { // lower triangle
+        
+           // translate (x only):
+           xx = x - a1;
+           yy = y;
+           
+           // rotate:
+           x =  xx*cos2 + yy*sin2;
+           y = -xx*sin2 + yy*cos2;         
+        }
+     }  
+  }
+  
+  // shading:
+  float r, g, b, d;     
+  
+  if (type == 0) {
+     d = (1.0 - (x*x + y*y))*.142;
+  } else {
+     d = ((x-a1)*(x-a1) + y*y);
+  }
+  if (d >= 0.0 && d < .25*.25) {
+     r = .85;
+     g = .83;
+     b = .46;
+  } else {
+     d = 1.0 - d;
+     r = 0.19*d;
+     g = 0.29*d;
+     b = 0.65*d;
+  }
+
+  
+  gl_FragColor = vec4(r, g, b, 1.0);
+}

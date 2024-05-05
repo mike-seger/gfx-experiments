@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+	<head>
+		<title>JS1k 2019 demo — "Fractal Whirlwind" by Oliver Sepsik </title>
+		<meta charset="utf-8" />
+		<style>
+         html, body { margin: 0; padding: 0; border: 0; }
+         #c { display: block; width: 100vw; height: 100vh;  } /* kill scrollbars from hell */
+      </style>
+	</head>
+	<body>
+		<canvas id="c"></canvas>
+		<script>
+			var a = document.getElementsByTagName('canvas')[0];
+			var b = document.body;
+         var d = function(e){ return function(){ e.parentNode.removeChild(e); }; }(a);
+         // unprefix some popular vendor prefixed things (but stick to their original name)
+         var AudioContext =
+           window.AudioContext ||
+           window.webkitAudioContext;
+         var requestAnimationFrame =
+           window.requestAnimationFrame ||
+           window.mozRequestAnimationFrame ||
+           window.webkitRequestAnimationFrame ||
+           window.msRequestAnimationFrame ||
+           function(f){ setInterval(f, 1000/30); };
+         var c = a.getContext('2d');
+		</script>
+      <script>
+         M=Math;
+         I=28;
+         u=255;
+         class C
+         {
+            constructor(r,i)
+            {
+               this.r = r;
+               this.i = i;
+            }
+            a(n)
+            {
+               return new C(this.r + n.r, this.i + n.i);
+            }
+            m(n)
+            {
+               var t = this;
+               return new C((t.r * n.r) - (t.i * n.i), (t.r * n.i) + (n.i * t.r));
+            }
+            f()
+            {
+               var t = this;
+               return M.sqrt(t.r*t.r + t.i*t.i)
+            }
+         }
+         a.width = w = 520;
+         a.height = h = w*(innerHeight/innerWidth);
+         cd=c.getImageData(0,0,w,h);
+
+         N=0;
+         S=.03;
+         P = 1;
+         W=.5-M.random();
+         L=.5-M.random();
+         setInterval(()=>{
+            N+=S;
+            Z=new C(M.cos(N)*1.2-.6+W,M.sin(N)*.6+L);
+         (()=>{
+            for(x=0;x<w;++x)for(y=0;y<h;++y){
+            var X=(x-((w/6)*3))/(w/6);
+            var Y=(y-((h/3)*1.5))/(h/3);
+            var z=new C(X,Y);
+            var n=0;
+            while(z.f() <= 2 && n < I)
+            {
+               z = (z.m(z)).a(Z);
+               ++n;
+            }
+            if(n==I)var j=I;
+            else var j=n + 1 - M.log2(M.log(z.f()));
+            c2=Q(((j / 10)),1,(j < I ? .65 : 0));
+            ix = (x+y*w)*4;
+            ct = cd.data;
+            ct[ix] = c2[0];
+            ct[ix+1] = c2[1];
+            ct[ix+2] = c2[2];
+            ct[ix+3] = u;}
+            c.putImageData(cd,0,0);
+         })();
+         });
+         b.addEventListener('wheel',e=>{
+            wh = e.wheelDelta;
+            S -= (wh ? wh : -e.deltaY)<0 ? .005 : -.005;
+         });
+
+         Q=(h, s, l)=>{
+               h=h%1;
+               var Q2 = (p, q, t)=>{
+                     a=(q - p), t=t%1;
+                     return t<1/6 ? p+a*6*t : (t<.5 ? q : (t<2/3 ? p+a*(2/3-t)*6 : p));
+               };
+               q = l < 0.5 ? l * (1 + s) : l + s - l * s,p = 2 * l - q;
+            return [~~(Q2(p, q, h + 1/3) * u), ~~(Q2(p, q, h) * u), ~~(Q2(p, q, h - 1/3) * u)];
+         };
+      </script>
+	</body>
+</html>

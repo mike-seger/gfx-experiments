@@ -1,0 +1,713 @@
+@glsl_fs_advance
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform sampler2D sampler_prev;
+uniform sampler2D sampler_prev_n;
+uniform sampler2D sampler_blur;
+uniform sampler2D sampler_blur2;
+uniform sampler2D sampler_blur3;
+uniform sampler2D sampler_blur4;
+uniform sampler2D sampler_noise;
+uniform sampler2D sampler_noise_n;
+
+varying vec2 pixel;
+uniform vec2 pixelSize;
+uniform vec4 rnd;
+uniform vec2 mouse;
+uniform float time;
+uniform float fps;
+
+bool is_onscreen(vec2 uv){
+	return (uv.x < 1.) && (uv.x > 0.) && (uv.y < 1.) && (uv.y > 0.);
+}
+ 
+void main(void) {
+  vec4 noise = texture2D(sampler_noise, pixel + rnd.xy)-0.5; // the noise texture itself is static. adding randomizing 
+ 
+  // overall plane deformation vector (zoom-in on the mouse position)
+  
+  vec2 c = mouse + (rnd.zw-0.5)*pixelSize*128.; // adding random to avoid artifacts
+  vec2 uv = c + (pixel - c)*0.993; // 0.7% zoom in per frame
+ 
+  // green: very soft reaction-diffusion (skin dot synthesis simulation)
+ 
+  gl_FragColor.y = texture2D(sampler_prev, uv).y + noise.y*0.0066; // a dash of error diffusion;
+  gl_FragColor.y += (texture2D(sampler_prev, uv).y-texture2D(sampler_blur4, uv).y)*0.0166; // sort of a Laplacian
+  
+  // ^^ yes, that is all the magic for green.
+  
+  // blue: just another reaction-diffusion with green as inhibitor, also different color gradients are used as plane deformation vector
+  
+  vec2 d = pixelSize*8.;
+  vec2 gy; // gradient in green
+  gy.x = texture2D(sampler_blur2, pixel-vec2(1.,0.)*d).y - texture2D(sampler_blur2, pixel+vec2(1.,0.)*d).y;
+  gy.y = texture2D(sampler_blur2, pixel-vec2(0.,1.)*d).y - texture2D(sampler_blur2, pixel+vec2(0.,1.)*d).y;
+
+  d = pixelSize*4.;
+  vec2 gz; // gradient in blue
+  gz.x = texture2D(sampler_blur, pixel-vec2(1.,0.)*d).z - texture2D(sampler_blur, pixel+vec2(1.,0.)*d).z;
+  gz.y = texture2D(sampler_blur, pixel-vec2(0.,1.)*d).z - texture2D(sampler_blur, pixel+vec2(0.,1.)*d).z;
+
+  uv += gy.yx*vec2(1.,-1.)*pixelSize*4. //gradient in green rotated by 90 degree
+    - gy*pixelSize*16. // gradient in green
+    - gz*pixelSize*0.25 // gradient of blue - makes the "traveling wave fronts" usually
+    + gz.yx*vec2(-1.,1.)*pixelSize*4.; // rotated gradient of blue - makes the painterly effect here
+  gl_FragColor.z = texture2D(sampler_prev, uv).z + noise.z*0.12; // error diffusion
+  gl_FragColor.z += (texture2D(sampler_prev, uv).z-texture2D(sampler_blur3, uv).z)*0.11; // teh magic :P
+
+  gl_FragColor.z +=  - (gl_FragColor.y-0.02)*.025;
+
+  // that's all for blue ^^
+  // since this became such a beauty, the code for red is mostly a copy, but the inhibitor is inverted to the absence of green
+
+  vec2 gx; // gradient in blue
+  gx.x = texture2D(sampler_blur, pixel-vec2(1.,0.)*d).x - texture2D(sampler_blur, pixel+vec2(1.,0.)*d).x;
+  gx.y = texture2D(sampler_blur, pixel-vec2(0.,1.)*d).x - texture2D(sampler_blur, pixel+vec2(0.,1.)*d).x;
+
+  uv += - gy.yx*vec2(1.,-1.)*pixelSize*8. //gradient in green rotated by 90 degree
+    + gy*pixelSize*32. // gradient in green
+    - gx*pixelSize*0.25 // gradient of red - makes the "traveling wave fronts" usually
+    - gx.yx*vec2(-1.,1.)*pixelSize*4.; // rotated gradient of red - makes the painterly effect here
+  gl_FragColor.x = texture2D(sampler_prev, uv).x + noise.x*0.12; // error diffusion
+  gl_FragColor.x += (texture2D(sampler_prev, uv).x-texture2D(sampler_blur3, uv).x)*0.11; // reaction diffusion
+
+  gl_FragColor.x +=  - ((1.-gl_FragColor.y)-0.02)*.025;
+
+  gl_FragColor.a = 1.;
+}
+
+@glsl_fs_composite
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform sampler2D sampler_prev;
+uniform sampler2D sampler_prev_n;
+uniform sampler2D sampler_blur;
+uniform sampler2D sampler_blur2;
+uniform sampler2D sampler_blur3;
+uniform sampler2D sampler_blur4;
+uniform sampler2D sampler_noise;
+uniform sampler2D sampler_noise_n;
+
+varying vec2 pixel;
+uniform vec2 pixelSize;
+uniform vec2 aspect;
+uniform vec4 rnd;
+uniform vec2 mouse;
+uniform float time;
+
+void main(void) {
+  gl_FragColor = vec4(1.-abs(texture2D(sampler_prev, pixel).y*2.-1.));
+
+  vec2 d = pixelSize*1.;
+  vec2 gy; // green pixel gradient vector
+  gy.x = texture2D(sampler_prev, pixel-vec2(1.,0.)*d).y - texture2D(sampler_prev, pixel+vec2(1.,0.)*d).y;
+  gy.y = texture2D(sampler_prev, pixel-vec2(0.,1.)*d).y - texture2D(sampler_prev, pixel+vec2(0.,1.)*d).y;
+
+  d = pixelSize*4.;
+
+  vec2 gz; // blue blur2 gradient vector
+  gz.x += texture2D(sampler_blur2, pixel-vec2(1.,0.)*d).z - texture2D(sampler_blur2, pixel+vec2(1.,0.)*d).z;
+  gz.y += texture2D(sampler_blur2, pixel-vec2(0.,1.)*d).z - texture2D(sampler_blur2, pixel+vec2(0.,1.)*d).z;
+
+  gl_FragColor = vec4(0.);
+
+  gl_FragColor.y = texture2D(sampler_prev, pixel + gz*pixelSize*64.).y*0.4 - (gz.x + gz.y)*0.4 + 0.4; // gradient enhancement and refraction
+  gl_FragColor.z = texture2D(sampler_blur4, pixel + 4.*gy - gz ).z*1.75 -0.0; // scatter/refract
+
+  gl_FragColor.yz *= 1.- texture2D(sampler_blur4, pixel).x*2.5; // box shadow
+  gl_FragColor.x = texture2D(sampler_prev, pixel).x*1.+0.25; // repaint over shadow
+  
+  gl_FragColor.y += gl_FragColor.x; // red -> yellow
+
+  gl_FragColor.yz *= vec2(0.75,1.)- texture2D(sampler_blur4, pixel).z*1.5; // shadow
+  gl_FragColor.z += texture2D(sampler_prev, pixel).z*1.5; // repaint over shadow
+  gl_FragColor.y += gl_FragColor.z*0.5 - 0.1; // blue -> cyan
+  
+  
+  // gl_FragColor = texture2D(sampler_prev, pixel); // bypass
+  
+  gl_FragColor.a = 1.;
+}
+@main
+var gl = $('<canvas/>').appendTo($('#'+containerId)).attr('width', viewportWidth).attr('height', viewportHeight)[0].getContext('experimental-webgl', { depth : false });
+
+function getShader(gl, fs, src) {
+  var shader;
+  if (fs) {
+    shader = gl.createShader(gl.FRAGMENT_SHADER);
+  } else {
+    shader = gl.createShader(gl.VERTEX_SHADER);
+  }
+  gl.shaderSource(shader, src);
+  gl.compileShader(shader);
+  if (gl.getShaderParameter(shader, gl.COMPILE_STATUS) == 0)
+    alert(gl.getShaderInfoLog(shader));
+  return shader;
+}
+var prog_copy;
+var prog_advance;
+var prog_composite;
+var prog_blur_horizontal;
+var prog_blur_vertical;
+var FBO_main;
+var FBO_main2;
+var FBO_noise;
+var FBO_blur;
+var FBO_blur2;
+var FBO_blur3;
+var FBO_blur4;	
+var FBO_helper;
+var FBO_helper2;
+var FBO_helper3;
+var FBO_helper4;
+var texture_main_l; // main, linear
+var texture_main_n; // main, nearest (accurate pixel access on the same buffer)
+var texture_main2_l; // main double buffer, linear
+var texture_main2_n; // main double buffer, nearest (accurate pixel access on the same buffer)
+var texture_helper; // needed for multi-pass shader programs (2-pass Gaussian blur)
+var texture_helper2; // (1/4 resolution )
+var texture_helper3; // (1/16 resolution )
+var texture_helper4; // (1/256 resolution )
+var texture_blur; // full resolution blur result
+var texture_blur2; // double blur
+var texture_blur3; // quad blur
+var texture_blur4; // really low resolution - use wisely ^^
+var texture_noise_n; // noise pixel accurate
+var texture_noise_l; // noise interpolated pixel access
+
+var halted = false;
+var it = 1;
+var time;
+var mouseX = 0.5;
+var mouseY = 0.5;
+// texture size (must be powers of two, remember 2048x1024 flat could also be a 128x128x128 voxel)
+var sizeX = 1024;
+var sizeY = 1024; // 2048x1024 flat or 128x128x128 cube
+// viewport size
+var viewX = viewportWidth;
+var viewY = viewportHeight;
+
+if (!gl) {
+  alert("Your browser does not support WebGL");
+  return;
+}
+
+document.onmousemove = function(evt) {
+  mouseX = evt.pageX / viewX;
+  mouseY = 1 - evt.pageY / viewY;
+};
+document.onclick = function(evt) {
+  halted = !halted;
+};
+
+prog_copy = gl.createProgram();
+gl.attachShader(prog_copy, getShader(gl, false, glsl_vs));
+gl.attachShader(prog_copy, getShader(gl, true, glsl_fs_copy));
+gl.linkProgram(prog_copy);
+
+prog_advance = gl.createProgram();
+gl.attachShader(prog_advance, getShader(gl, false, glsl_vs));
+gl.attachShader(prog_advance, getShader(gl, true, glsl_fs_advance));
+gl.linkProgram(prog_advance);
+
+prog_composite = gl.createProgram();
+gl.attachShader(prog_composite, getShader(gl, false, glsl_vs));
+gl.attachShader(prog_composite, getShader(gl, true, glsl_fs_composite));
+gl.linkProgram(prog_composite);
+
+prog_blur_horizontal = gl.createProgram();
+gl.attachShader(prog_blur_horizontal, getShader(gl, false, glsl_vs));
+gl.attachShader(prog_blur_horizontal, getShader(gl, true, glsl_fs_blur_horizontal));
+gl.linkProgram(prog_blur_horizontal);
+
+prog_blur_vertical = gl.createProgram();
+gl.attachShader(prog_blur_vertical, getShader(gl, false, glsl_vs));
+gl.attachShader(prog_blur_vertical, getShader(gl, true, glsl_fs_blur_vertical));
+gl.linkProgram(prog_blur_vertical);
+
+var posBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+
+var vertices = new Float32Array([ -1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0 ]);
+
+var aPosLoc = gl.getAttribLocation(prog_advance, "aPos");
+gl.enableVertexAttribArray(aPosLoc);
+
+var aTexLoc = gl.getAttribLocation(prog_advance, "aTexCoord");
+gl.enableVertexAttribArray(aTexLoc);
+
+var texCoords = new Float32Array([ 0, 0, 1, 0, 0, 1, 1, 1 ]);
+
+var texCoordOffset = vertices.byteLength;
+
+gl.bufferData(gl.ARRAY_BUFFER, texCoordOffset + texCoords.byteLength, gl.STATIC_DRAW);
+gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
+gl.bufferSubData(gl.ARRAY_BUFFER, texCoordOffset, texCoords);
+gl.vertexAttribPointer(aPosLoc, 3, gl.FLOAT, gl.FALSE, 0, 0);
+gl.vertexAttribPointer(aTexLoc, 2, gl.FLOAT, gl.FALSE, 0, texCoordOffset);
+
+var noisepixels = [];
+var pixels = [];
+for ( var i = 0; i < sizeX; i++) {
+  for ( var j = 0; j < sizeY; j++) {
+    noisepixels.push(Math.random() * 255, Math.random() * 255, Math.random() * 255, 255);
+    pixels.push(0, 0, 0, 255);
+  }
+}
+
+var pixels2 = [];
+for ( var i = 0; i < sizeX / 2; i++) {
+  for ( var j = 0; j < sizeY / 2; j++) {
+    pixels2.push(0, 0, 0, 255);
+  }
+}
+
+var pixels3 = [];
+for ( var i = 0; i < sizeX / 4; i++) {
+  for ( var j = 0; j < sizeY / 4; j++) {
+    pixels3.push(0, 0, 0, 255);
+  }
+}
+
+var pixels4 = [];
+for ( var i = 0; i < sizeX / 8; i++) {
+  for ( var j = 0; j < sizeY / 8; j++) {
+    pixels4.push(0, 0, 0, 255);
+  }
+}
+		var rawData = new Uint8Array(noisepixels);
+texture_main_l = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_main_l);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX, sizeY, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(noisepixels);
+texture_main_n = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_main_n);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX, sizeY, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+rawData = new Uint8Array(noisepixels);
+texture_main2_l = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_main2_l);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX, sizeY, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(noisepixels);
+texture_main2_n = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_main2_n);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX, sizeY, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+rawData = new Uint8Array(pixels);
+texture_helper = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_helper);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX, sizeY, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(pixels2);
+texture_helper2 = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_helper2);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX / 2, sizeY / 2, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(pixels3);
+texture_helper3 = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_helper3);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX / 4, sizeY / 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(pixels4);
+texture_helper4 = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_helper4);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX / 8, sizeY / 8, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(pixels);
+texture_blur = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_blur);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX, sizeY, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(pixels2);
+texture_blur2 = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_blur2);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX / 2, sizeY / 2, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(pixels3);
+texture_blur3 = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_blur3);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX / 4, sizeY / 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(pixels4);
+texture_blur4 = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_blur4);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX / 8, sizeY / 8, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+rawData = new Uint8Array(noisepixels);
+texture_noise_l = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_noise_l);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX, sizeY, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+texture_noise_n = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture_noise_n);
+gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sizeX, sizeY, 0, gl.RGBA, gl.UNSIGNED_BYTE, rawData);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+FBO_main = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_main);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_main_l, 0);
+
+FBO_main2 = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_main2);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_main2_l, 0);
+
+FBO_helper = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_helper, 0);
+
+FBO_helper2 = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper2);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_helper2, 0);
+
+FBO_helper3 = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper3);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_helper3, 0);
+
+FBO_helper4 = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper4);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_helper4, 0);
+
+FBO_blur = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_blur, 0);
+
+FBO_blur2 = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur2);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_blur2, 0);
+
+FBO_blur3 = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur3);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_blur3, 0);
+
+FBO_blur4 = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur4);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_blur4, 0);
+
+FBO_noise = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_noise);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_noise_l, 0);
+
+gl.activeTexture(gl.TEXTURE2);
+gl.bindTexture(gl.TEXTURE_2D, texture_blur);
+
+gl.activeTexture(gl.TEXTURE3);
+gl.bindTexture(gl.TEXTURE_2D, texture_blur2);
+
+gl.activeTexture(gl.TEXTURE4);
+gl.bindTexture(gl.TEXTURE_2D, texture_blur3);
+
+gl.activeTexture(gl.TEXTURE5);
+gl.bindTexture(gl.TEXTURE_2D, texture_blur4);
+
+gl.activeTexture(gl.TEXTURE6);
+gl.bindTexture(gl.TEXTURE_2D, texture_noise_l);
+
+gl.activeTexture(gl.TEXTURE7);
+gl.bindTexture(gl.TEXTURE_2D, texture_noise_n);
+
+calculateBlurTexture();
+
+function setUniforms(program) {
+  gl.uniform2f(gl.getUniformLocation(program, "pixelSize"), 1. / sizeX, 1. / sizeY);
+  gl.uniform4f(gl.getUniformLocation(program, "rnd"), Math.random(), Math.random(), Math.random(), Math.random());
+  gl.uniform1f(gl.getUniformLocation(program, "time"), time);
+  gl.uniform2f(gl.getUniformLocation(program, "aspect"), Math.max(1, viewX / viewY), Math.max(1, viewY / viewX));
+  gl.uniform2f(gl.getUniformLocation(program, "mouse"), mouseX, mouseY);
+  gl.uniform1i(gl.getUniformLocation(program, "sampler_prev"), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "sampler_prev_n"), 1);
+  gl.uniform1i(gl.getUniformLocation(program, "sampler_blur"), 2);
+  gl.uniform1i(gl.getUniformLocation(program, "sampler_blur2"), 3);
+  gl.uniform1i(gl.getUniformLocation(program, "sampler_blur3"), 4);
+  gl.uniform1i(gl.getUniformLocation(program, "sampler_blur4"), 5);
+  gl.uniform1i(gl.getUniformLocation(program, "sampler_noise"), 6);
+  gl.uniform1i(gl.getUniformLocation(program, "sampler_noise_n"), 7);
+}
+
+function calculateBlurTexture() {
+  // simple blur
+  // horizontal
+  gl.viewport(0, 0, sizeX, sizeY);
+  gl.useProgram(prog_blur_horizontal);
+  gl.uniform2f(gl.getUniformLocation(prog_blur_horizontal, "pixelSize"), 1. / sizeX, 1. / sizeY);
+  gl.activeTexture(gl.TEXTURE0);
+  if (it < 0) {
+    gl.bindTexture(gl.TEXTURE_2D, texture_main2_l);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper);
+  } else {
+    gl.bindTexture(gl.TEXTURE_2D, texture_main_l);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper);
+  }
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+  
+  // vertical
+  gl.viewport(0, 0, sizeX, sizeY);
+  gl.useProgram(prog_blur_vertical);
+  gl.uniform2f(gl.getUniformLocation(prog_blur_vertical, "pixelSize"), 1. / sizeX, 1. / sizeY);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_helper);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+  
+  // double blur
+  // copy previous blur level to lower resolution texture
+  gl.viewport(0, 0, sizeX / 2, sizeY / 2);
+  gl.useProgram(prog_copy);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_blur);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur2);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+  
+  // blur2 vertical
+  gl.viewport(0, 0, sizeX / 2, sizeY / 2);
+  gl.useProgram(prog_blur_vertical);
+  gl.uniform2f(gl.getUniformLocation(prog_blur_vertical, "pixelSize"), 2. / sizeX, 2. / sizeY);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_blur2);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper2);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+  
+  // blur2 horizontal
+  gl.viewport(0, 0, sizeX / 2, sizeY / 2);
+  gl.useProgram(prog_blur_horizontal);
+  gl.uniform2f(gl.getUniformLocation(prog_blur_horizontal, "pixelSize"), 2. / sizeX, 2. / sizeY);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_helper2);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur2);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+  
+  // blur3
+  // copy previous blur level to lower resolution texture
+  gl.viewport(0, 0, sizeX / 4, sizeY / 4);
+  gl.useProgram(prog_copy);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_blur2);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur3);	
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+
+  // blur3 vertical
+  gl.viewport(0, 0, sizeX / 4, sizeY / 4);
+  gl.useProgram(prog_blur_vertical);
+  gl.uniform2f(gl.getUniformLocation(prog_blur_vertical, "pixelSize"), 4. / sizeX, 4. / sizeY);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_blur3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper3);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+  
+  // blur3 horizontal
+  gl.viewport(0, 0, sizeX / 4, sizeY / 4);
+  gl.useProgram(prog_blur_horizontal);
+  gl.uniform2f(gl.getUniformLocation(prog_blur_horizontal, "pixelSize"), 4. / sizeX, 4. / sizeY);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_helper3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur3);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+  
+  // blur4
+  // copy previous blur level to lower resolution texture
+  gl.viewport(0, 0, sizeX / 8, sizeY / 8);
+  gl.useProgram(prog_copy);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_blur3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur4);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+  
+  // blur4 vertical
+  gl.viewport(0, 0, sizeX / 8, sizeY / 8);
+  gl.useProgram(prog_blur_vertical);
+  gl.uniform2f(gl.getUniformLocation(prog_blur_vertical, "pixelSize"), 8. / sizeX, 8. / sizeY);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_blur4);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_helper4);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);		gl.flush();
+
+  
+  // blur4 horizontal
+  gl.viewport(0, 0, sizeX / 8, sizeY / 8);
+  gl.useProgram(prog_blur_horizontal);
+  gl.uniform2f(gl.getUniformLocation(prog_blur_horizontal, "pixelSize"), 8. / sizeX, 8. / sizeY);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture_helper4);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_blur4);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+}
+
+function advance() {
+  gl.viewport(0, 0, sizeX, sizeY);
+  gl.useProgram(prog_advance);
+  setUniforms(prog_advance);
+  if (it > 0) {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture_main_l); // interpolated input
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, texture_main_n); // "nearest" input
+    gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_main2); // write to buffer
+  } else {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture_main2_l); // interpolated
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, texture_main2_n); // "nearest"
+    gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_main); // write to buffer
+  }
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+
+  calculateBlurTexture();
+  it = -it;
+}
+
+function composite() {
+  gl.viewport(0, 0, viewX, viewY);
+  gl.useProgram(prog_composite);
+  setUniforms(prog_composite);
+  if (it < 0) {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture_main_l);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, texture_main_n);
+  } else {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture_main2_l);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, texture_main2_n);
+  }
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
+}
+
+function frame() {
+  if (!halted)
+    advance();
+  composite();
+}
+
+@glsl_vs
+attribute vec3 aPos;
+attribute vec2 aTexCoord;
+varying   vec2 pixel;
+
+void main(void) {
+   gl_Position = vec4(aPos, 1.);
+   pixel = aTexCoord;
+}
+
+@glsl_fs_copy
+#ifdef GL_ES
+precision mediump float;
+#endif
+	uniform sampler2D sampler_prev;
+	varying vec2 pixel;
+void main(void) {
+	gl_FragColor = texture2D(sampler_prev, pixel);
+	gl_FragColor.a = 1.;
+}
+
+@glsl_fs_blur_horizontal
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+// original shader from http://www.gamerendering.com/2008/10/11/gaussian-blur-filter-shader/
+// horizontal blur fragment shader
+uniform sampler2D src_tex;
+varying vec2 pixel;
+uniform vec2 pixelSize;
+void main(void) // fragment
+{
+  float h = pixelSize.x;
+  vec4 sum = vec4(0.0);
+  sum += texture2D(src_tex, vec2(pixel.x - 4.0*h, pixel.y) ) * 0.05;
+  sum += texture2D(src_tex, vec2(pixel.x - 3.0*h, pixel.y) ) * 0.09;
+  sum += texture2D(src_tex, vec2(pixel.x - 2.0*h, pixel.y) ) * 0.12;
+  sum += texture2D(src_tex, vec2(pixel.x - 1.0*h, pixel.y) ) * 0.15;
+  sum += texture2D(src_tex, vec2(pixel.x + 0.0*h, pixel.y) ) * 0.16;
+  sum += texture2D(src_tex, vec2(pixel.x + 1.0*h, pixel.y) ) * 0.15;
+  sum += texture2D(src_tex, vec2(pixel.x + 2.0*h, pixel.y) ) * 0.12;
+  sum += texture2D(src_tex, vec2(pixel.x + 3.0*h, pixel.y) ) * 0.09;
+  sum += texture2D(src_tex, vec2(pixel.x + 4.0*h, pixel.y) ) * 0.05;
+  gl_FragColor.xyz = sum.xyz/0.98; // normalize
+  gl_FragColor.a = 1.;
+} 
+
+@glsl_fs_blur_vertical
+#ifdef GL_ES
+precision mediump float;
+#endif
+// original shader from http://www.gamerendering.com/2008/10/11/gaussian-blur-filter-shader/
+// vertical blur fragment shader
+uniform sampler2D src_tex;
+varying vec2 pixel;
+uniform vec2 pixelSize;
+void main(void) // fragment
+{
+  float v = pixelSize.y;
+  vec4 sum = vec4(0.0);
+  sum += texture2D(src_tex, vec2(pixel.x, - 4.0*v + pixel.y) ) * 0.05;
+  sum += texture2D(src_tex, vec2(pixel.x, - 3.0*v + pixel.y) ) * 0.09;
+  sum += texture2D(src_tex, vec2(pixel.x, - 2.0*v + pixel.y) ) * 0.12;
+  sum += texture2D(src_tex, vec2(pixel.x, - 1.0*v + pixel.y) ) * 0.15;
+  sum += texture2D(src_tex, vec2(pixel.x, + 0.0*v + pixel.y) ) * 0.16;
+  sum += texture2D(src_tex, vec2(pixel.x, + 1.0*v + pixel.y) ) * 0.15;
+  sum += texture2D(src_tex, vec2(pixel.x, + 2.0*v + pixel.y) ) * 0.12;
+  sum += texture2D(src_tex, vec2(pixel.x, + 3.0*v + pixel.y) ) * 0.09;
+  sum += texture2D(src_tex, vec2(pixel.x, + 4.0*v + pixel.y) ) * 0.05;
+  gl_FragColor.xyz = sum.xyz/0.98;
+  gl_FragColor.a = 1.;
+}

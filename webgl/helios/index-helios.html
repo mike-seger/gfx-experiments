@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!-- saved from url=(0041)https://art.muth.org/helios.html#Standard -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Helios</title>
+    
+    <meta http-equiv="Content-Type" content="text/html">
+    <style>
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; //
+    background-size: cover;
+    background-size: 100% 100%;
+}
+
+body {
+    font-family: sans-serif;
+}
+
+div.error {
+    z-index: 2;
+    opacity: 0.75;
+    position: absolute;
+    background-color: red;
+    color: white;
+    top: 20%;
+    bottom: 20%;
+    left: 10%;
+    right: 10%;
+    text-align: center;
+    vetical-align: middle;
+    align-content: center;
+    font-size: 300%;
+    justify-content: center;
+    align-items: center;
+    /* display:flex; */
+}
+
+div.about, div.config, div.performance, div.logo {
+    z-index: 2;
+    opacity: 0.5;
+    position: absolute;
+    background-color: #666;
+    color: white;
+}
+
+div.about {
+    padding: 1em;
+    top: 4%;
+    bottom: 4%;
+    left: 52%;
+    right: 4%;
+}
+
+div.config {
+    padding: 1em;
+    top: 4%;
+    bottom: 4%;
+    left: 4%;
+    right: 52%;
+}
+
+div.progress {
+    position: absolute;
+    left: 50%;
+    top: 50%; //
+    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    padding: .5em; // //
+    color: #f00;
+    background-color: #87CEFA;
+}
+
+div.performance {
+    padding: .5em;
+}
+
+div.logo {
+    padding: .5em;
+    background-color: rgba(0, 0, 0, 0);
+    color: white;
+    bottom: 2%;
+    right: 2%;
+}
+
+img.splash {
+    width: 100%;
+    height: 100%;
+}
+
+input[type=reset], button {
+    font-weight: bold;
+}
+
+input[type=text], input[type=number] {
+    width: 5em;
+}
+
+a {
+    color: inherit;
+}
+
+a:hover, a:visited, a:link, a:active {
+    text-decoration: none;
+    font-weight: bold;
+}
+
+    </style>
+    <script type="text/javascript" async="" src="./Helios_files/js"></script><script async="" src="./Helios_files/analytics.js"></script><script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			 m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-32123907-10', 'auto');
+ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+<div class="about" hidden="">
+    <h2>About</h2>
+    <pre>  Copyright (c) 2015 Robert Muth (robert@muth.org)
+
+  Based on Helios by <a href="http://www.reallyslick.com/screensavers/">Terence M. Welsh</a>
+  
+  More Screen Art at: <a href="http://art.muth.org/">http://art.muth.org</a>
+	<pre id="state"></pre>
+      </pre>
+    <table>
+        <tbody><tr>
+            <th>Key</th>
+            <th>Function</th>
+        </tr>
+        <tr>
+            <th>A</th>
+            <td>Toggle About</td>
+        </tr>
+        <tr>
+            <th>C</th>
+            <td>Toggle Config</td>
+        </tr>
+        <tr>
+            <th>P</th>
+            <td>Toggle Performance</td>
+        </tr>
+        <tr>
+            <th>R</th>
+            <td>Reset/Restart</td>
+        </tr>
+    </tbody></table>
+    <br>
+    <button type="button" data-cmd="C+">Config</button>
+    &nbsp;
+    <button type="button" data-cmd="A-">Close</button>
+</div>
+
+<div class="config" hidden="">
+    <h2>Config</h2>
+    <form>
+        <select id="preset">
+        <option value="Standard">Standard</option><option value="CloseUp">CloseUp</option><option value="CrazyCamera">CrazyCamera</option><option value="NoSurfaces">NoSurfaces</option><option value="NoSurfacesCrazyCamera">NoSurfacesCrazyCamera</option></select>
+        <button type="button" data-cmd="X">Activate Preset</button>
+    </form>
+    <h3>Customize</h3>
+
+    <form>
+        <table>
+            <tbody><tr>
+                <td><input type="number" id="sources" min="1" max="100" value="5"></td>
+                <td>Sources</td>
+            </tr>
+
+            <tr>
+                <td><input type="number" id="sinks" min="1" max="100" value="5"></td>
+                <td>Sinks</td>
+            </tr>
+            <tr>
+                <td><input type="number" id="ions" min="1" max="10000" value="1500"></td>
+                <td>Ions</td>
+            </tr>
+            <tr>
+                <td><input type="number" id="speed" min="1" max="1000" value="10"></td>
+                <td>Ion Speed<sup>*</sup></td>
+            </tr>
+            <tr>
+                <td><input type="number" id="size" min="1" max="100" value="25" step="1"></td>
+                <td>Ion Size</td>
+            </tr>
+            <tr>
+                <td><input type="number" id="interval" min="1" max="1000" value="10"></td>
+                <td>Source/Sink Change Time<sup>*</sup></td>
+            </tr>
+
+            <tr>
+                <td><input type="number" id="blurriness" step="0.01" min="0.0" max="1.0" value="0.8"></td>
+                <td>Blurriness</td>
+            </tr>
+            <tr>
+                <td><select id="animation">
+                    <option value="none">None</option>
+                    <option value="orbit">Orbit</option>
+                    <option value="random">Random</option>
+                </select></td>
+                <td>Animation</td>
+            </tr>
+            <tr>
+                <td><select id="cameraDistance">
+                    <option value="close">Close</option>
+                    <option value="far">Far</option>
+                    <option value="random">Random</option>
+                    <option value="manual">Manual</option>
+                </select></td>
+                <td>Camera Distance</td>
+            </tr>
+            <tr>
+                <td><input type="number" id="fov" min="10" max="170" value="25" step="1"></td>
+                <td>Field of View</td>
+            </tr>
+            <tr>
+                <td><select id="detail">
+                    <option value="15">15 (detailed)</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                    <option value="40">40</option>
+                    <option value="50">50(coarse)</option>
+                </select></td>
+                <td>Surface Detail<sup>*</sup></td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" id="showSurfaces"></td>
+                <td>Show Surfaces</td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" id="showIons"></td>
+                <td>Show Ions</td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" id="hideAbout"></td>
+                <td>Hide About screen<sup>*</sup></td>
+            </tr>
+            <tr>
+                <td><input type="number" id="randomSeed" value="0" step="1" short="1"></td>
+                <td>Random Seed<sup>*</sup></td>
+            </tr>
+        </tbody></table>
+    </form>
+    <sup>* = Restart required to take effect</sup>
+
+    <p>
+        <button type="button" data-cmd="R">Restart</button>
+    </p>
+    <p>
+        <button type="button" data-cmd="C-">Close</button>
+        &nbsp;
+        <button type="button" data-cmd="A">About</button>
+        &nbsp;
+        <button type="button" data-cmd="P">Frame Rate</button>
+
+    </p>
+</div>
+
+<div class="performance" hidden="">
+    <pre id="fps">60.00
+</pre>
+</div>
+
+
+<div class="logo">Helios</div>
+
+<div class="error" id="error" hidden=""></div>
+
+<div id="event">
+    <canvas id="area" width="1302" height="699"></canvas>
+</div>
+<script src="./Helios_files/helios.dart.js"></script>
+<script src="./Helios_files/dart.js"></script>
+
+
+</body></html>

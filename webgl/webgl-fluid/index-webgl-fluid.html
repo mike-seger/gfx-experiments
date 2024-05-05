@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+
+  <body>
+    <canvas style="width: 100vw; height: 100vh" />
+    <script type="importmap">
+      {
+        "imports": {
+          "webgl-fluid": "https://cdn.jsdelivr.net/npm/webgl-fluid@0.3/dist/webgl-fluid.mjs"
+        }
+      }
+    </script>
+    <script type="module">
+      import WebGLFluid from 'webgl-fluid'
+
+      WebGLFluid(document.querySelector('canvas'), {
+        AUTO: true, // Whether to enable auto-splating
+        INTERVAL: 3000, // The time (in milliseconds) the timer should delay in between auto-splating
+      })
+    </script>
+  </body>
+</html>

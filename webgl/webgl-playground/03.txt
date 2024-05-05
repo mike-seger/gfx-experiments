@@ -1,0 +1,97 @@
+@info
+by krychu
+Shader-based 2D metaballs.
+
+@libs
+http://webglplayground.net/libs/jquery-1.6.2.min.js
+http://webglplayground.net/libs/Three_r46.js
+
+@main
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(viewportWidth, viewportHeight);
+$('#' + containerId).append(renderer.domElement);
+
+var camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100.0);
+camera.position.z = 2.0;
+var scene = new THREE.Scene();
+scene.add( camera );
+    
+//geometry
+var geometry = new THREE.PlaneGeometry(2, 2, 10, 10);
+var cp = new Array();
+for (var i=0; i<15; i++) {
+  cp.push(Math.random());
+  cp.push(Math.random());
+  cp.push(0.0);
+}
+cpCopy = cp.slice();
+var uniforms = {
+  "time": { type: "f", value: 1.0},
+  "cp": { "type": "fv", "value": cp }
+};
+    
+var material = new THREE.MeshShaderMaterial({
+  uniforms: uniforms,
+  vertexShader: glsl_vs1,
+  fragmentShader: glsl_fs1
+});
+
+var mesh = new THREE.Mesh( geometry, material );
+scene.addObject( mesh );
+
+function frame(runningTime) {
+  uniforms.time.value += 0.01;
+  for (var i=0; i<15; i++) {
+    var x = cpCopy[3*i];
+    var y = cpCopy[3*i+1];
+    //var z = uniforms.cp[3*i+2];
+    var dx = Math.sin(i+uniforms.time.value)*0.2;
+    var dy = Math.cos(5*i+uniforms.time.value)*0.2;
+    uniforms.cp.value[3*i] = x + dx;
+    uniforms.cp.value[3*i+1] = y + dy;
+    //uniforms.cp[3*i+2] = z;
+  }
+  renderer.render(scene, camera);
+}
+
+@glsl_vs1
+varying vec2 vuv;
+
+void main()
+{
+  vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+  gl_Position = projectionMatrix * mvPosition;
+  vuv = uv;
+}
+
+@glsl_fs1
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform float time;
+uniform vec2 resolution;
+uniform vec3 cp[15];
+varying vec2 vuv;
+
+void main(void)
+{
+  float x = vuv.x;
+  float y = vuv.y;
+  vec3 position = vec3(x, y, 0.0);
+  float totalEnergy = 0.0;
+  for (int i=0; i<15; i++) {
+    float d = distance(cp[i], position);
+    totalEnergy += 1.0/(pow(d,1.72));
+  }
+  totalEnergy /= 80000.0;
+  if (totalEnergy>0.0016) {
+    if (mod(floor(time/10.0),2.0)!=0.0) {
+      gl_FragColor=vec4(0.2,0.2,0.2,0.4+totalEnergy*80.0);
+    } else {
+      gl_FragColor=vec4(0.2,0.2,0.2,1.0);
+    }
+  } else {
+    gl_FragColor=vec4(1.0,1.0,1.0,1.0);
+  }
+}

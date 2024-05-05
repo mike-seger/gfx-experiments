@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.dom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.sound.min.js"></script>
+    <meta charset="utf-8" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background-color: #242424; 
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+  </head>
+  <body>
+    <script>
+// 這可以發展成fxhash的作品
+// features =  num, rotate speed
+//
+// 用此方法來決定randomSeed和noiseSeed，就不用用fxrand()取代
+//console.log(fxrand()); // deterministic PRNG function
+//const seed = ~~(fxrand() * 123456789);
+const seed = ~~(4711* 123456789);
+//
+var theta;
+var angle;
+let particles = [];
+let num;
+let myColor;
+var glowImg;
+var degree;
+var frames;
+
+// 目前設置了12種顏色
+let color_red;
+let color_orange;
+let color_rose;
+let color_lightgreen;
+let color_darkgreen;
+let color_yellow;
+let color_lightyellow;
+let color_pink;
+let color_purple;
+let color_lightblue;
+let color_darkblue;
+let color_white;
+
+//
+let randomness01;
+let randomness02;
+let randomness03;
+let randomness04;
+let randomness05;
+//
+let rotateDir;
+
+function setup() {
+   randomSeed(seed);
+    noiseSeed(seed);
+  //
+  frames = 0;
+  randomness01 = random(1);
+  randomness02 = random(1);
+  randomness03 = random(1);
+  randomness04 = random(1);
+  randomness05 = random(1);
+
+  if (randomness01 > 0.5) {
+    rotateDir = 1;
+  } else {
+    rotateDir = -1;
+  }
+
+  num = int(random(4, 12));
+  console.log(num);
+  //frameRate(30);
+  colorMode(HSB, 255);
+  glowImg = loadImage("../images/glow.png");
+
+  //
+  createCanvas(800, 800, WEBGL);
+  angleMode(DEGREES);
+  noStroke();
+  a = min(width, height) / 12;
+  // create the particles
+  for (let i = 0; i < num; i++) {
+    theta = random(0, 360);
+    angle = random(360);
+    particles.push(new Particle(theta, angle));
+  }
+  rotateZ(radians(random(0, 360)));
+}
+
+function draw() {
+  frames++;
+  //t = frameCount;
+
+  if (frames < 300) {
+    rotateZ(rotateDir * radians(frames) * 10);
+    noStroke();
+
+    // 畫光粒子 Particles -------------------------------------------------------
+    for (let i = 0; i < particles.length; i++) {
+      //Rect myRect2 = (Rect)particles.get(i);
+      //push();
+      particles[i].display();
+      particles[i].move();
+      // pop();
+    }
+  }
+  /*
+  if (frames > 300) {
+    //noLoop();
+    frames=0;
+  }
+  */
+}
+
+// 外圍的光粒子
+class Particle {
+  constructor(_theta, _angle) {
+    this.k_1 = 1;
+    this.k_2 = 5;
+    this.i = random(1, 5); // this influence the size of the sparks
+    this.theta = _theta;
+    this.angle = _angle;
+    this.hexX;
+    this.hexY;
+  }
+
+  display() {
+    this.theta += 0.15;
+    this.hexX = (width / 4) * cos(this.theta * 3);
+    this.hexY = (width / 10) * sin(this.theta);
+    //rotateY(radians(this.angle * 17));
+    //rotateX(radians(this.angle * 24));
+    //noStroke();
+    //stroke(255);
+    //line(0, 0, this.hexX, this.hexY);
+
+    push();
+    translate(
+      this.hexX + cos(this.theta * 10) * 50,
+      this.hexY + cos(this.theta * 10) * 50
+    );
+    rotateZ(radians(this.theta * 5));
+
+    //translate(0, 0, 0);
+    //rotateY(radians(90 - camPos));
+    //tint(this.angle * 0.8);
+    tint(this.angle * 0.8 + sin(this.angle * 10) * 50);
+    texture(glowImg);
+    // plane(this.angle * 40, 5);  // nice
+    plane(this.angle * 40, this.angle * 0.02); // more change
+
+    pop();
+  }
+  move() {
+    this.k_1 += 0.015;
+    this.k_2 += 0.003;
+    //rotateY(radians(this.k_1*2));
+    //console.log(this.k);
+  }
+}
+
+function keyPressed() {
+  if (key == "s" || key == "S") {
+    save("work_windowSize.png");
+  } else if (key == "1") {
+    frames = 0;
+    console.log(frames);
+    resizeCanvas(1000, 1000);
+    redraw();
+
+    //save("work_2000_2000.png");
+  } else if (key == "2") {
+    frames = 0;
+    console.log(frames);
+    resizeCanvas(2000, 2000);
+    redraw();
+  } else if (key == "3") {
+    frames = 0;
+    console.log(frames);
+    resizeCanvas(3000, 3000);
+    redraw();
+  }else if (key == "4") {
+    frames = 0;
+    console.log(frames);
+    resizeCanvas(4000, 4000);
+    redraw();
+  }
+}
+
+       
+    </script>
+  </body>
+</html>
