@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+      <meta charset="UTF-8">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script>
+      <meta name="description" content="Ambient ASCII art rainy window screensaver by Jack Adam."/>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      <script src="rain.js"></script>
+      <title>Rainy ASCII Window</title>
+      <style>
+        html { background-color: #000000; }
+        #drop { position: fixed; font-size: 10px; }
+      </style>
+  </head>
+  <body>
+    <select id="drop" style="" onchange="speed(this.value);">
+      <option value = "1.0">Slowest</option>
+      <option value = "2.0">Slow</option>
+      <option value = "3.5" selected>Normal</option>
+      <option value = "5.0">Fast</option>
+      <option value = "6.5">Fastest</option>
+    </select>
+  </body>
+<html>
