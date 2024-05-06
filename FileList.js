@@ -31,7 +31,7 @@ export default { fileList: [
 'webgl/cubes/index.html',
 'webgl/helios/index-helios.html',
 'webgl/magicdust/index.html',
-'webgl/nebula/index.html',
+'webgl/simpleplasma/index.html',
 'webgl/voxels-liquid/index-voxels-liquid.html',
 'webgl/webgl-filter/index.html',
 'webgl/webgl-fluid/index-webgl-fluid.html',
