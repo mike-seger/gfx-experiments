@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cut Torus in Three.js</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
+<!-- <script src="ThreeCSG.js"></script> -->
+<!-- <script src="https://unpkg.com/three@latest/build/three.min.js"></script> -->
+
+<script type="module">
+// import * as THREE from 'https://unpkg.com/three@latest/build/three.module.js';
+// //import { CSG } from 'three-bvh-csg';
+// import * as CSG from 'https://cdn.jsdelivr.net/npm/three-bvh-csg@0.0.16/+esm'
+// import * as THREE from 'https://unpkg.com/three@latest/build/three.module.js';
+import * as THREE from 'https://unpkg.com/three@latest/build/three.module.js';
+// import { Brush, Evaluator, SUBTRACTION } from './three-bvh-csg.js';
+import { Brush, Evaluator, SUBTRACTION } from 'https://cdn.jsdelivr.net/npm/three-bvh-csg@0.0.16/+esm';
+
+document.addEventListener('DOMContentLoaded', function() {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 30);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const light = new THREE.PointLight(0xffffff, 1);
+    light.position.set(5, 5, 5);
+    scene.add(light);
+
+    // Create the torus geometry and mesh
+    const torusGeometry = new THREE.TorusGeometry(6, 1, 8, 180);
+    const torusMaterial = new THREE.MeshStandardMaterial({ color: 0x0077dd });
+    const torusMesh = new THREE.Mesh(torusGeometry, torusMaterial);
+    torusMesh.updateMatrixWorld(true);  // Ensure the matrix is up to date
+
+    try {
+        const brush1 = new Brush( new THREE.SphereGeometry(10,10,10) );
+        brush1.updateMatrixWorld();
+
+        const brush2 = new Brush( new THREE.BoxGeometry(10,10,10) );
+        brush2.position.y = 5;
+        brush2.updateMatrixWorld();
+
+        const evaluator = new Evaluator();
+        const result = evaluator.evaluate( brush1, brush2, SUBTRACTION );
+        scene.add(result);
+
+    } catch (error) {
+        console.error("Failed to create Brush:", error);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+    animate();
+});
+</script>
+</body>
+</html>
