@@ -6,7 +6,7 @@ function setup() {
 function draw() {
     background(255);
     rotateX(60);
-    rotateZ(frameCount * 0.5);
+    rotateZ(frames * 0.5);
 
     const totalDegrees = 360;
     const arcDegrees = 60; // Degrees of each segment (360 / 5)
