@@ -3,16 +3,18 @@ function navigate(anchor) {
     const iframes = Array.from(main.querySelectorAll("iframe"))
     let iframe
     if(window.sigleIframe) {
-        if(iframes.length==0) iframe = createIframe()
-        else iframe = iframes[0]
-
+        iframes.forEach((iframe) => {
+            iframe.src = "about:blank"
+            main.removeChild(iframe)
+            iframe.remove()
+        })
+        iframe = createIframe()
         iframe.src = anchor.href
         iframe.name = anchor.href
     } else {
         const matchingIframes = iframes.filter(iframe => iframe.name === anchor.href)
         if(matchingIframes.length == 0) iframe = createIframe()
         else iframe = matchingIframes[0]
-
         iframes.forEach(iframe => { iframe.style.display = "none" })
     }
 
