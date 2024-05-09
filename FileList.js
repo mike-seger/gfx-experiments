@@ -1,5 +1,4 @@
 export default { fileList: [
-'3d-generation/p5.js/torus/index.html',
 '3d-generation/three.js/extruded-torus/index.html',
 '3d-objects/test/index-obj-loader.html',
 'filter/index-video-filtering.html',
