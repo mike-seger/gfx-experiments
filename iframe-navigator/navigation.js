@@ -1,25 +1,37 @@
 function navigate(anchor) {
     const main = document.getElementById("main")
     const iframes = Array.from(main.querySelectorAll("iframe"))
-    const matchingIframes = iframes.filter(iframe => iframe.name === anchor.href)
     let iframe
-    if(matchingIframes.length == 0) {
-        iframe = document.createElement('iframe')
+    if(window.sigleIframe) {
+        if(iframes.length==0) iframe = createIframe()
+        else iframe = iframes[0]
+
         iframe.src = anchor.href
         iframe.name = anchor.href
-        iframe.style.display = 'none'
-        main.appendChild(iframe)
-    } else iframe = matchingIframes[0]
+    } else {
+        const matchingIframes = iframes.filter(iframe => iframe.name === anchor.href)
+        if(matchingIframes.length == 0) iframe = createIframe()
+        else iframe = matchingIframes[0]
 
-    iframes.forEach(iframe => { iframe.style.display = "none" })
+        iframes.forEach(iframe => { iframe.style.display = "none" })
+    }
+
     iframe.style.display = 'block'
-
     const sidenav = document.getElementById("sidenav")
     const anchors = Array.from(sidenav.querySelectorAll("a"))
                 
     anchors.forEach(anchor => { anchor.classList.remove("selected") })
     anchor.classList.add("selected")
     return false
+
+    function createIframe() {
+        const iframe = document.createElement('iframe')
+        iframe.src = anchor.href
+        iframe.name = anchor.href
+        iframe.style.display = 'none'
+        main.appendChild(iframe)
+        return iframe
+    }
 }
 
 function resetMain() {
