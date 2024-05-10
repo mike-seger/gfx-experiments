@@ -74,11 +74,51 @@ function applyColorReduction(data, bitDepth) {
     }
 }
 
-function applyOrderedDither16x16(frame, monoColor={r:0,g:0,b:0}, bgColor={r:255,g:255,b:255}) {
+function applyOrderedDitherMatrix(frame, ditherMatrix, monoColor={r:0, g:0, b:0}, bgColor={r:255, g:255, b:255}) {
     const data = frame.data;
     const width = frame.width;
     const height = frame.height;
+    const matrixDim = ditherMatrix.length;
 
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = (x + y * width) * 4;
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const grayscale = 0.299 * r + 0.587 * g + 0.114 * b;
+            const maxMatrixValue = ditherMatrix.reduce((max, row) => Math.max(max, ...row), 0);
+            const ditherValue = (grayscale / 255) * (maxMatrixValue + 1);
+            const matrixValue = ditherMatrix[y % matrixDim][x % matrixDim];
+            const newColor = ditherValue > matrixValue ? 255 : 0;
+
+            data[i] = newColor === 0 ? monoColor.r : bgColor.r;
+            data[i + 1] = newColor === 0 ? monoColor.g : bgColor.g;
+            data[i + 2] = newColor === 0 ? monoColor.b : bgColor.b;
+        }
+    }
+}
+
+function applyOrderedDither2x2(frame, monoColor={r:0,g:0,b:0}, bgColor={r:255,g:255,b:255}) {
+    const bayer2x2 = [
+        [1, 3],
+        [4, 2]
+    ]
+    applyOrderedDitherMatrix(frame, bayer2x2, monoColor, bgColor)
+}
+
+function applyOrderedDither4x4(frame, monoColor={r:0,g:0,b:0}, bgColor={r:255,g:255,b:255}) {
+    const bayerMatrix = [
+        [ 1,  9,  3, 11],
+        [13,  5, 15,  7],
+        [ 4, 12,  2, 10],
+        [16,  8, 14,  6]
+    ]
+    
+    applyOrderedDitherMatrix(frame, bayerMatrix, monoColor, bgColor)
+}
+
+function applyOrderedDither8x8(frame, monoColor={r:0,g:0,b:0}, bgColor={r:255,g:255,b:255}) {
     let ditherMatrix = [
         [1, 49, 13, 61, 4, 52, 16, 64],
         [33, 17, 45, 29, 36, 20, 48, 32],
@@ -88,28 +128,38 @@ function applyOrderedDither16x16(frame, monoColor={r:0,g:0,b:0}, bgColor={r:255,
         [35, 19, 47, 31, 34, 18, 46, 30],
         [11, 59, 7, 55, 10, 58, 6, 54],
         [43, 27, 39, 23, 42, 26, 38, 22]
-    ];
-    const matrixDim = ditherMatrix[0].length
+    ]
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const i = (x + y * width) * 4;
-            const r = data[i];
-            const g = data[i+1];
-            const b = data[i+2];
-            const grayscale = 0.299 * r + 0.587 * g + 0.114 * b;
-            const ditherValue = (grayscale / 255) * 65;
-            const newColor = (ditherValue > ditherMatrix[x % matrixDim][y % matrixDim])? 255 : 0
-            //const scale = grayscale + ditherMatrix[y % matrixDim][x % matrixDim] * 16 - 128; // Scale the grayscale value based on the matrix
-            //const newColor = scale > 128 ? 255 : 0;
-
-            data[i] = newColor==0? monoColor.r : newColor
-            data[i+1] = newColor==0? monoColor.g : newColor
-            data[i+2] = newColor==0? monoColor.b : newColor
-        }
-    }
+    applyOrderedDitherMatrix(frame, ditherMatrix, monoColor, bgColor)
 }  
 
+function applyOrderedDither16x16(frame, monoColor={r:0,g:0,b:0}, bgColor={r:255,g:255,b:255}) {
+    const bayerMatrix16x16 = [
+        [ 0, 192,  48, 240,  12, 204,  60, 252,   3, 195,  51, 243,  15, 207,  63, 255],
+        [128,  64, 176, 112, 140,  76, 188, 124, 131,  67, 179, 115, 143,  79, 191, 127],
+        [ 32, 224,  16, 208,  44, 236,  28, 220,  35, 227,  19, 211,  47, 239,  31, 223],
+        [160,  96, 144,  80, 172, 108, 156,  92, 163,  99, 147,  83, 175, 111, 159,  95],
+        [ 8, 200,  56, 248,   4, 196,  52, 244,  11, 203,  59, 251,   7, 199,  55, 247],
+        [136,  72, 184, 120, 132,  68, 180, 116, 139,  75, 187, 123, 135,  71, 183, 119],
+        [ 40, 232,  24, 216,  36, 228,  20, 212,  43, 235,  27, 219,  39, 231,  23, 215],
+        [168, 104, 152,  88, 164, 100, 148,  84, 171, 107, 155,  91, 167, 103, 151,  87],
+        [ 2, 194,  50, 242,  14, 206,  62, 254,   1, 193,  49, 241,  13, 205,  61, 253],
+        [130,  66, 178, 114, 142,  78, 190, 126, 129,  65, 177, 113, 141,  77, 189, 125],
+        [ 34, 226,  18, 210,  46, 238,  30, 222,  33, 225,  17, 209,  45, 237,  29, 221],
+        [162,  98, 146,  82, 174, 110, 158,  94, 161,  97, 145,  81, 173, 109, 157,  93],
+        [ 10, 202,  58, 250,   6, 198,  54, 246,   9, 201,  57, 249,   5, 197,  53, 245],
+        [138,  74, 186, 122, 134,  70, 182, 118, 137,  73, 185, 121, 133,  69, 181, 117],
+        [ 42, 234,  26, 218,  38, 230,  22, 214,  41, 233,  25, 217,  37, 229,  21, 213],
+        [170, 106, 154,  90, 166, 102, 150,  86, 169, 105, 153,  89, 165, 101, 149,  85]
+    ];
+    
+
+    applyOrderedDitherMatrix(frame, bayerMatrix16x16, monoColor, bgColor)
+}  
+
+
+
+/*
 function applyOrderedDither(frame, monoColor={r:0,g:0,b:0}, bgColor={r:255,g:255,b:255}) {
     const bayerMatrix = [
         [ 1,  9,  3, 11],
@@ -130,7 +180,7 @@ function applyOrderedDither(frame, monoColor={r:0,g:0,b:0}, bgColor={r:255,g:255
             data[i+2] = newColor==0? monoColor.b : newColor
         }
     }
-}   
+}   */
 
 function applyOrderedDitherColor(frame) {
     const data = frame.data;
@@ -450,3 +500,18 @@ function applyConvolution(frame, kernel) {
       }
     }
   }
+
+const Dithering = {}
+Dithering.applyAtkinsonDither = applyAtkinsonDither
+Dithering.applyBlueNoiseDither = applyBlueNoiseDither
+Dithering.applyFloydSteinbergFilter = applyFloydSteinbergFilter
+Dithering.applyOrderedDither2x2 = applyOrderedDither2x2
+Dithering.applyOrderedDither4x4 = applyOrderedDither4x4
+Dithering.applyOrderedDither8x8 = applyOrderedDither8x8
+Dithering.applyOrderedDither16x16 = applyOrderedDither16x16
+Dithering.applyOrderedDitherColor = applyOrderedDitherColor
+Dithering.applyRandomDither = applyRandomDither
+Dithering.applySierraDither = applySierraDither
+Dithering.applyStuckiDither = applyStuckiDither
+
+window.Dithering = Dithering

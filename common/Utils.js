@@ -72,3 +72,5 @@ function addPrevNextToSelects() {
     const selectElements = document.querySelectorAll('select')
     selectElements.forEach(addKeyNavigation)
 }
+
+window.addPrevNextToSelects = addPrevNextToSelects
