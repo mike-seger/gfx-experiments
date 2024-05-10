@@ -68,10 +68,10 @@
         const presetA2B2 = Object.assign({}, presetA2B1, { filter: 'Floyd-Steinberg Filter' })
 
         const presets = {
-            "preset": "select preset ...",
+            "preset": "Default",
             "closed": false,
             "remembered": {
-                "select preset ...": { "0": settings }, 
+                "Default": { "0": settings }, 
                 "System": { "0": presetSystem }, 
                 "Alien Comms": { "0": presetAlienComms },
                 "Driving": { "0": presetDriving },
@@ -192,9 +192,10 @@
         }
 
         function setupControls(settings) {
-            dat.GUI.TEXT_OPEN = "Parameters";
-            dat.GUI.TEXT_CLOSED = "Hide parameters";
+            dat.GUI.TEXT_OPEN = "Parameters"
+            dat.GUI.TEXT_CLOSED = "Hide parameters"
             const gui = new dat.GUI(datConfig)
+            //localStorage.clear()
 
             gui.add(transientSettings, 'showOriginal').name("show original").onChange(() => { showOriginal(transientSettings.showOriginal) })
             gui.useLocalStorage = true

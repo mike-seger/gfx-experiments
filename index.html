@@ -21,10 +21,21 @@
 			console.log(file)
 			const anchor = document.createElement("a")
 			anchor.setAttribute("href", `${file}`)
-			const token = "/index-"
+			const token = "/index"
 			const pos = file.indexOf(token)
-			const path = file.substring(0, pos)
-			const name = file.substring(pos+token.length).replace(".html", "")
+			let path = file.substring(0, pos)
+			let name = file.substring(pos+token.length).replace(/^-/,'').replace(".html", "")
+			if(name === '') {
+				const pos2 = file.indexOf('/')
+				if(pos2<=0) {
+					name = path
+					path = ""
+				} else {
+					name = path.substring(pos2+1)
+					path = path.substring(0, pos2)
+				}
+			}
+
 			anchor.innerHTML = `${path} <b>${name}</b>`
 			sideNav.appendChild(anchor)
 		}

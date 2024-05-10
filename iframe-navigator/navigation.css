@@ -1,6 +1,7 @@
 :root {
     --sidebar-width: 150px;
     --sidebar-switcher-width: 16px;
+    color-scheme: dark;
 }
 
 body { 
