@@ -2,7 +2,7 @@ function navigate(anchor) {
     const main = document.getElementById("main")
     const iframes = Array.from(main.querySelectorAll("iframe"))
     let iframe
-    if(window.sigleIframe) {
+    if(window.singleIframe) {
         iframes.forEach((iframe) => {
             iframe.src = "about:blank"
             main.removeChild(iframe)
