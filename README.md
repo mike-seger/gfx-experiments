@@ -19,3 +19,6 @@ Links
   - https://zimjs.com/raw/
   - https://zimjs.com/soundwave/bars.html
   - https://zimjs.com/bits/sequence.html
+
+- three-bvh-csg
+  - https://gkjohnson.github.io/three-bvh-csg/examples/bundle/simple.html
