@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Geometric Transformation</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+        }
+    }
+</script>
+<body>
+
+<script type="module">
+import * as THREE from 'three'
+
+// Scene setup
+const scene = new THREE.Scene();
+
+// const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+// camera.position.set(10, 5, 15);
+// camera.lookAt(0, 0, 0);
+
+const width = 15
+const height = 15
+const aspectRatio = window.innerWidth / window.innerHeight;
+const camera = new THREE.OrthographicCamera(
+    -width * aspectRatio / 2, width * aspectRatio / 2,
+    height / 2, -height / 2,
+    1, 100
+);
+camera.position.set(5, 5, 5);
+camera.lookAt(scene.position);
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+function generatePolygonPoints(sides, radius, center, normal) {
+    const points = [];
+    const angleStep = (Math.PI * 2) / sides;
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal.normalize());
+
+    for (let i = 0; i < sides; i++) {
+        const x = Math.cos(i * angleStep) * radius;
+        const y = Math.sin(i * angleStep) * radius;
+        const point = new THREE.Vector3(x, y, 0);
+        point.applyQuaternion(quaternion); // Rotate point into correct orientation
+        point.add(center); // Translate point to the correct center
+        points.push(point);
+    }
+    return points;
+}
+
+function createPolygonGeometry(points) {
+    const geometry = new THREE.BufferGeometry().setFromPoints(points.concat(points[0])); // Close the loop
+    return geometry;
+}
+
+// function drawLine(geometry, color, scene) {
+//     const material = new THREE.LineBasicMaterial({ color: color });
+//     const line = new THREE.Line(geometry, material);
+//     scene.add(line);
+//     return line;
+// }
+
+function drawLine(geometry, color, scene, thickness=0.05) {
+    const vertices = geometry.getAttribute('position').array;
+    const material = new THREE.MeshBasicMaterial({ color: color });
+
+    for (let i = 0; i < vertices.length - 3; i += 3) {
+        const start = new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]);
+        const end = new THREE.Vector3(vertices[i + 3], vertices[i + 4], vertices[i + 5]);
+
+        // Calculate the distance and midpoint
+        const distance = start.distanceTo(end);
+        const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+
+        // Create cylinder geometry
+        const cylinderGeometry = new THREE.CylinderGeometry(thickness, thickness, distance, 8);
+        const cylinder = new THREE.Mesh(cylinderGeometry, material);
+
+        // Orient the cylinder
+        cylinder.position.copy(midpoint);
+        cylinder.lookAt(end);
+        cylinder.rotateX(Math.PI / 2); // Align with the line
+
+        // Add to scene
+        scene.add(cylinder);
+    }
+}
+
+function drawLine0(geometry, color, scene, thickness = 0.05) {
+    // Create a path from the geometry's vertices
+    const vertices = geometry.getAttribute('position').array;
+    const points = [];
+    for (let i = 0; i < vertices.length; i += 3) {
+        points.push(new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]));
+    }
+    const path = new THREE.CatmullRomCurve3(points);
+
+    // Create the tube geometry
+    const tubeGeometry = new THREE.TubeGeometry(path, 64, thickness, 8, false);
+
+    // Create the material and mesh
+    const material = new THREE.MeshBasicMaterial({ color: color });
+    const mesh = new THREE.Mesh(tubeGeometry, material);
+    scene.add(mesh);
+    return mesh;
+}
+
+function createArcGeometry(point, degrees=180) {
+    // Convert degrees to radians for the arc calculation
+    const radians = degrees * Math.PI / 180;
+
+    // Start the arc from the x-axis and sweep around
+    const startAngle = -radians;
+    const endAngle = 0;
+
+    const arcCurve = new THREE.EllipseCurve(
+        0, point.y,                          // ax, ay - center of the ellipse shifted to (0, point.y)
+        Math.abs(point.x), Math.abs(point.x),  // xRadius, yRadius (same for circular arc)
+        startAngle, endAngle,                // aStartAngle, aEndAngle
+        false,                               // aClockwise
+        0                                    // aRotation (rotation around the center)
+    );
+
+    // Generate points for the arc and map y to z for orthogonality to xy-plane
+    const points = arcCurve.getPoints(50).map(p => new THREE.Vector3(p.x, point.y, p.y - point.y));
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    return geometry;
+}
+
+function rotatePointsMatrix(points, axis, degrees) {
+    const radians = degrees * Math.PI / 180;
+    const rotationMatrix = new THREE.Matrix4().makeRotationAxis(axis.normalize(), radians);
+
+    return points.map(point => {
+        return point.clone().applyMatrix4(rotationMatrix);
+    });
+}
+
+function createArcGeometry1(point) {
+    const arcCurve = new THREE.EllipseCurve(
+        0, point.y,                       // ax, ay - center of the ellipse shifted to (0, point.y)
+        Math.abs(point.x), Math.abs(point.x), // xRadius, yRadius
+        0, Math.PI,                       // aStartAngle, aEndAngle
+        false,                            // aClockwise
+        0                                 // aRotation
+    );
+    const points = arcCurve.getPoints(50).map(p => new THREE.Vector3(p.x, point.y, p.y - point.y));
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    return geometry;
+}
+
+const n = 6;
+const radius = 1;
+const arcAngle = 60
+let center = new THREE.Vector3(5, 0, 0);
+let normal = new THREE.Vector3(0, 0, 1).normalize();
+const polygon1 = generatePolygonPoints(n, radius, center, normal);
+const polygon2 = rotatePointsMatrix(polygon1, new THREE.Vector3(0, 1, 0), arcAngle)
+drawLine(createPolygonGeometry(polygon1), 0xff0000, scene)
+drawLine(createPolygonGeometry(polygon2), 0xff0000, scene)
+
+polygon1.forEach(
+    (point) => drawLine(createArcGeometry(point, arcAngle), 0x0000ff, scene)
+)
+
+const axesHelper = new THREE.AxesHelper(5);
+scene.add(axesHelper);
+
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>

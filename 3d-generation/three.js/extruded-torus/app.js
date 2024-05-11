@@ -199,11 +199,20 @@ function createRotatedArcMesh(n, nMax, elapsed) {
 function createRotatedArcLines(n, nMax, elapsed) {
     const accel = acceleration(elapsed/1000.0, 1.5, 0.5)
     const geometry = createArcGeometry(elapsed/1000*25)
+  /*
+    const wireframe = new THREE.WireframeGeometry( geometry );
+
+const lines = new THREE.LineSegments( wireframe );
+lines.material.depthTest = false;
+lines.material.opacity = 1//0.25;
+lines.material.transparent = true;*/
+
     
     const edges = new THREE.EdgesGeometry(geometry, 25)
 
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
     const lines = new THREE.LineSegments(edges, lineMaterial)
+
 
     /*
     const lineMaterial = new LineMaterial({ 
