@@ -32,3 +32,10 @@ Links
 - Thomas Knoll's Pattern Dithering: https://www.shadertoy.com/view/dlcGzN
 - https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 - https://medium.com/@pangkhangee/pixel-perfect-dithering-shader-in-blender-fd6898e8ba23
+- https://medium.com/the-bkpt/dithered-shading-tutorial-29f57d06ac39
+- https://github.com/mdeguzis/ftequake/blob/a83b8ca825255c343780ffc4fe99d96e9e9bce0c/engine/shaders/glsl/defaultwall.glsl#L97
+- https://maximmcnair.com/webgl-image-processing
+- https://threejs.org/docs/index.html#api/en/materials/Material.dithering
+- https://webgl2fundamentals.org/webgl/lessons/webgl-precision-issues.html
+- https://github.com/keijiro/KinoBinary
+- https://cultureulterior.github.io/supercell/webgl.html
