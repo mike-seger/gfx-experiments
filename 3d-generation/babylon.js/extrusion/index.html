@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset = "utf-8">
+    <title>BabylonJs - Basic Element-Creating Scene</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+    <script src="utils.js"></script>"
+    <style>
+        canvas {width: 100%; height: 100%;}
+    </style>
+</head>
+
+<body>
+    <canvas id = "renderCanvas"></canvas>
+    <script type = "text/javascript">
+        let canvas = document.getElementById("renderCanvas");
+        let engine = new BABYLON.Engine(canvas, true);
+        function createScene() {
+            // const scene = new BABYLON.Scene(engine);
+
+            // const camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 2, 30, BABYLON.Vector3.Zero());
+            // camera.attachControl(canvas, true);
+
+            // const light = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 50, 0));
+            //var light = new BABYLON.PointLight("Omni", new BABYLON.Vector3(0, 100, 100), scene);
+            //baseMat = new BABYLON.StandardMaterial('base material', scene);
+            //scene.ambientColor = new BABYLON.Color3(0, 0, 1);
+
+            var scene = new BABYLON.Scene(engine);
+            var camera = new BABYLON.ArcRotateCamera("camera1", -Math.PI*1.02,-Math.PI/2,40.0,
+                new BABYLON.Vector3(1, 0,-2), scene);
+            camera.setTarget(BABYLON.Vector3.Zero());
+            camera.attachControl(canvas, true);
+            
+            var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(10, 10, 0), scene);
+            light.specular = new BABYLON.Color3.Black() 
+
+            //Shape profile in XY plane
+            const myShape = createRegularPolygon(9, 1.5)
+
+            const myPath = [
+                //new BABYLON.Vector3(0, 0, 0),
+                new BABYLON.Vector3(0, 1.5, 0),
+                new BABYLON.Vector3(0, 1.5, 1),
+                new BABYLON.Vector3(0, 2.25, 4),
+                new BABYLON.Vector3(0, 3.37, 6),
+                new BABYLON.Vector3(0, 5.06, 8),
+                new BABYLON.Vector3(0, 8.32, 10),
+            ];
+
+            const pbr = new BABYLON.PBRMaterial("pbr", scene);
+            pbr.metallic = 0.0;
+            pbr.roughness = 0.5;    
+            pbr.sheen.isEnabled = true;
+
+            function fixMesh(mesh) {
+                mesh.enableEdgesRendering(0.93);
+                mesh.material = new BABYLON.StandardMaterial('mat', scene);
+            //extrusion.material.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+
+                mesh.edgesWidth = 10;
+                mesh.edgesColor = new BABYLON.Color4(0, 0, 0, 1);	
+                mesh.position.y = 1.2;
+                mesh.receiveShadow = false
+                mesh.castShadow = true
+                mesh.receiveShadows = false
+                mesh.castShadows = true
+                mesh.disableLighting = true
+                mesh.convertToFlatShadedMesh()
+                mesh.material = pbr;    
+            }
+
+            const torus = BABYLON.MeshBuilder.CreateTorus("torus", {
+                diameter: 10,
+                tesselation: 8,
+                thickness: 2
+            }, scene);
+            fixMesh(torus)
+
+            const extrusion = BABYLON.MeshBuilder.ExtrudeShape("polygon", 
+                {
+                    shape: myShape, 
+                    closeShape: false, 
+                    path: myPath, 
+                    depth: 0,
+                    //sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    cap: BABYLON.Mesh.CAP_ALL
+                }, scene);
+
+            fixMesh(extrusion)
+            //extrusion.increaseVertices()
+            //extrusion.forceSharedVertices()
+            //extrusion.zOffset = 0.1  
+
+            //const mesh = BABYLON.MeshBuilder.Create("poly1", { shape: myShape} , scene);
+
+            showAxis(10, scene);
+            return scene;
+        }
+
+        let scene = createScene();
+        engine.runRenderLoop(function() { scene.render(); });
+    </script>
+</body>
+</html>

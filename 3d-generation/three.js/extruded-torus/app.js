@@ -82,9 +82,10 @@ class CustomSinCurve extends THREE.Curve {
 
 const path = new CustomSinCurve()
 const extrudeSettings = {
-    steps: 40,
+    steps: 80,
+    //depth: 100,
     extrudePath: path,
-    bevelEnabled: true
+    bevelEnabled: false
 }
 
 function updateCanvasStyle() {
@@ -196,6 +197,49 @@ function createRotatedArcMesh(n, nMax, elapsed) {
     return mesh     
 }
 
+function addCylinderBetweenPoints(point1, point2, thickness, material, scene) {
+    const direction = new THREE.Vector3().subVectors(point2, point1);
+    const orientation = new THREE.Matrix4();
+    orientation.lookAt(point1, point2, new THREE.Object3D().up);
+    orientation.multiply(new THREE.Matrix4().set(1, 0, 0, 0,
+                                                 0, 0, 1, 0,
+                                                 0, -1, 0, 0,
+                                                 0, 0, 0, 1));
+    const edgeGeometry = new THREE.CylinderGeometry(thickness / 2, thickness / 2, direction.length(), 8, 1);
+    const edge = new THREE.Mesh(edgeGeometry, material);
+    edge.applyMatrix4(orientation);
+    edge.position.x = (point2.x + point1.x) / 2;
+    edge.position.y = (point2.y + point1.y) / 2;
+    edge.position.z = (point2.z + point1.z) / 2;
+    scene.add(edge);
+}
+
+function createRotatedArcLines2(n, nMax, elapsed) {
+    const accel = acceleration(elapsed/1000.0, 1.5, 0.5)
+    const geometry = createArcGeometry(elapsed/1000*25)
+    const edges = new THREE.EdgesGeometry(geometry, 25);
+    const vertices = edges.attributes.position.array;
+
+    const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const thickness = 0.1;  // Set the desired thickness of your lines
+
+    for (let i = 0; i < vertices.length; i += 6) {
+        const start = new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]);
+        const end = new THREE.Vector3(vertices[i + 3], vertices[i + 4], vertices[i + 5]);
+        addCylinderBetweenPoints(start, end, thickness, lineMaterial, scene);
+    }
+
+    // Optionally set rotation on the entire group of cylinders if needed
+    const linesGroup = new THREE.Group();
+    scene.children.forEach(child => {
+        if (child instanceof THREE.Mesh && child.material === lineMaterial) {
+            linesGroup.add(child);
+        }
+    });
+    linesGroup.rotation.y = (n + accel + 0.7) * (360 / nMax) * Math.PI / 180;
+    return linesGroup
+}
+
 function createRotatedArcLines(n, nMax, elapsed) {
     const accel = acceleration(elapsed/1000.0, 1.5, 0.5)
     const geometry = createArcGeometry(elapsed/1000*25)
@@ -208,10 +252,15 @@ lines.material.opacity = 1//0.25;
 lines.material.transparent = true;*/
 
     
-    const edges = new THREE.EdgesGeometry(geometry, 25)
+    const edges = new THREE.EdgesGeometry(geometry, 2)
 
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
-    const lines = new THREE.LineSegments(edges, lineMaterial)
+    // const lineMaterial = new LineMaterial({ 
+    //     color: 0x000000,
+    //     linewidth: 40, // width in pixels, adjust as necessary
+    //     resolution: new THREE.Vector2(width/4, height/4) // necessary for line thickness
+    // });
+    const lines = new THREE.LineSegments(edges, lineMaterial )
 
 
     /*
