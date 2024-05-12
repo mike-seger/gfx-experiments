@@ -36,7 +36,7 @@
 
         const settings = {
             video: 'test 01',
-            scaling: '1 : 1',
+            scaling: '1 : 2',
             filter: 'None',
             smoothPixels: false,
             blur: 0,
@@ -195,10 +195,10 @@
             dat.GUI.TEXT_OPEN = "Parameters"
             dat.GUI.TEXT_CLOSED = "Hide parameters"
             const gui = new dat.GUI(datConfig)
-            //localStorage.clear()
+            localStorage.clear()
 
             gui.add(transientSettings, 'showOriginal').name("show original").onChange(() => { showOriginal(transientSettings.showOriginal) })
-            gui.useLocalStorage = true
+            //gui.useLocalStorage = true
             gui.remember(settings)
             const videos = []
             for (let i = 1; i <= maxVideos; i++) {

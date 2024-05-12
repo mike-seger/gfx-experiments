@@ -22,3 +22,13 @@ Links
 
 - three-bvh-csg
   - https://gkjohnson.github.io/three-bvh-csg/examples/bundle/simple.html
+
+- offscreencamvas
+  - https://offscreencanvas.com/
+
+- http://alex-charlton.com/posts/Dithering_on_the_GPU/
+- https://shader-tutorial.dev/advanced/color-banding-dithering/
+- Dithering should happen in sRGB: https://www.shadertoy.com/view/NssBRX
+- Thomas Knoll's Pattern Dithering: https://www.shadertoy.com/view/dlcGzN
+- https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+- https://medium.com/@pangkhangee/pixel-perfect-dithering-shader-in-blender-fd6898e8ba23

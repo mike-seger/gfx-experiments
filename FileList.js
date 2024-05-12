@@ -1,4 +1,6 @@
 export default { fileList: [
+'3d-generation/babylon.js/extrusion/index-animated1.html',
+'3d-generation/babylon.js/extrusion/index-animated2.html',
 '3d-generation/three.js/extruded-torus/index.html',
 '3d-objects/pixel-image/index.html',
 'filter/index-video-filtering.html',
