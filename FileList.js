@@ -32,7 +32,6 @@ export default { fileList: [
 'webgl/idealgas/index.html',
 'webgl/magicdust/index.html',
 'webgl/perlin-pulse/index.html',
-'webgl/perlin-snake/index.html',
 'webgl/shader/dither-glb/index.html',
 'webgl/shader/reflective-shapes/index.html',
 'webgl/simpleplasma/index.html',
