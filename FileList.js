@@ -27,7 +27,6 @@ export default { fileList: [
 'texture/texgen.js/index-examples.html',
 'texture/texgen.js/index-fractal-noise.html',
 'webgl/coral-reef/index.html',
-'webgl/dithering/donikv/webGl-dithering/index.html',
 'webgl/flurry/index.html',
 'webgl/helios/index.html',
 'webgl/idealgas/index.html',
