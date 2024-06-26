@@ -181,13 +181,13 @@
       createLetters();
     }
   }
-            if (key === '_') {
+            if (key === '/') {
     svgCanvas.save('svg-drawing.svg');
   }
 }
 
 function keyTyped() {
-            if (keyCode >= 32 && keyCode!=95) {
+            if (keyCode >= 32 && keyCode!=111) {
     textTyped += key;
     createLetters();
   }
