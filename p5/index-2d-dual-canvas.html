@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+
+<head>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://unpkg.com/p5.js-svg@1.5.1"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/p5.capture@1.4.1/dist/p5.capture.umd.min.js"></script> -->
+    <!-- <style>
+    body {
+        background-color: black;
+    }
+  </style> -->
+</head>
+
+<body>
+    <script>
+        var s1 = function (sketch) {
+            sketch.setup = function () {
+                let canvas1 = sketch.createCanvas(400, 400, sketch.WEBGL);
+                canvas1.position(0, 0);
+            }
+            sketch.draw = function () {
+                //for canvas 1
+                sketch.background(100);
+                sketch.rotateX(sketch.frameCount * 0.01);
+                sketch.rotateZ(sketch.frameCount * 0.01);
+                sketch.cone(120, 200);
+            }
+        };
+
+        // create a new instance of p5 and pass in the function for sketch 1
+        new p5(s1);
+
+        var s2 = function (sketch) {
+
+            sketch.setup = function () {
+                let canvas2 = sketch.createCanvas(400, 400, sketch.WEBGL);
+                canvas2.position(400, 0);
+            }
+            sketch.draw = function () {
+                //for canvas 2
+                sketch.background(100);
+                sketch.rotateX(sketch.frameCount * 0.01);
+                sketch.rotateZ(sketch.frameCount * 0.02);
+                sketch.cone(120, 200);
+            }
+        };
+
+        // create the second instance of p5 and pass in the function for sketch 2
+        new p5(s2);
+
+    </script>
+</body>
+
+</html>

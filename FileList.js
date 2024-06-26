@@ -8,6 +8,7 @@ export default { fileList: [
 'js1k/index-animated-julia.html',
 'js1k/index-dragons.html',
 'js1k/index-pacman.html',
+'p5/index-2d-dual-canvas.html',
 'p5/index-2d-generative-letters.html',
 'p5/index-2d-rings.html',
 'p5/index-2d-rotating-disk.html',
