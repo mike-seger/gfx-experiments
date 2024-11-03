@@ -3,7 +3,7 @@
 
 <head>
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.js"></script> -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
     <script src="https://unpkg.com/p5.js-svg@1.5.1"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/p5.capture@1.4.1/dist/p5.capture.umd.min.js"></script> -->
     <!-- <style>
@@ -66,26 +66,25 @@
          * arrow up            : increase font size
          * arrow down          : decrease font size
          * control             : save png
+         * shift control       : save svg
          *
          * CONTRIBUTED BY
          * [Niels Poldervaart](http://NielsPoldervaart.nl)
          */
 
-        'use strict';
+        'use strict'
 
-        var letters = [];
-        var density = 2.5;
-        var ribbonWidth = 92;
-        var shapeColor;
-        var fontSize = 800;
-        var pathSimplification = 0;
-        var pathSampleFactor = 0.1;
+        var letters = []
+        var density = 2.5
+        var ribbonWidth = 92
+        var shapeColor
+        var fontSize = 800
+        var pathSimplification = 0
+        var pathSampleFactor = 0.1
 
-        var textTyped = 'a';
-
-        var font;
-
-        let svgCanvas;
+        let textTyped = 'a'
+        let font
+        let svgCanvas
 
         function preload() {
             font = loadFont('data/NotoSans-Bold.ttf');
@@ -93,43 +92,44 @@
 
         function setup() {
             createCanvas(windowWidth, windowHeight);
-            svgCanvas = createGraphics(windowWidth, windowHeight, SVG); // SVG canvas
-            noFill();
-            svgCanvas.noFill();
-            strokeWeight(1);
-            shapeColor = color(0);
+            svgCanvas = createGraphics(windowWidth, windowHeight, SVG)
+            noFill()
+            svgCanvas.noFill()
+            strokeWeight(1)
+            shapeColor = color(0)
 
-            createLetters();
+            createLetters()
         }
 
         function draw() {
-            background(255);
-            svgCanvas.clear(); // Clear the SVG canvas
+            background(255)
+            svgCanvas.clear()
+            //svgCanvas.background(255)
 
-            translate(100, height * 0.75);
-            svgCanvas.translate(100, height * 0.75);
+            translate(100, height * 0.75)
+            svgCanvas.translate(100, height * 0.75)
 
-            pathSampleFactor = 0.1 * pow(0.02, mouseX / width);
-            ribbonWidth = map(mouseY, 0, height, 1, 200);
+            pathSampleFactor = 0.1 * pow(0.02, mouseX / width)
+            ribbonWidth = map(mouseY, 0, height, 1, 200)
 
             for (var i = 0; i < letters.length; i++) {
-                letters[i].draw(this); // Draw on the main canvas
-                letters[i].draw(svgCanvas); // Draw on the SVG canvas
+                letters[i].draw(this) // Draw on the main canvas
+                letters[i].draw(svgCanvas) // Draw on the SVG canvas
             }
         }
 
         function createLetters() {
-            letters = [];
-            var chars = textTyped.split('');
+            letters = []
+            var chars = textTyped.split('')
 
-            var x = 0;
+            var x = 0
             for (var i = 0; i < chars.length; i++) {
                 if (i > 0) {
-                    var charsBefore = textTyped.substring(0, i);
-                    x = font.textBounds(charsBefore, 0, 0, fontSize).w;
+                    var charsBefore = textTyped.substring(0, i)
+                    x = font.textBounds(charsBefore, 0, 0, fontSize).w
                 }
-                var newLetter = new Letter(chars[i], x, 0);
-                letters.push(newLetter);
+                var newLetter = new Letter(chars[i], x, 0)
+                letters.push(newLetter)
             }
         }
 
@@ -141,63 +141,68 @@
             Letter.prototype.draw = function (canvas) {
                 var path = font.textToPoints(this.char, this.x, this.y, fontSize, { sampleFactor: pathSampleFactor });
                 //canvas.stroke(shapeColor);
-                canvas.strokeWeight(1);
+                canvas.strokeWeight(1)
 
                 for (var d = 0; d < ribbonWidth; d += density) {
-                    canvas.beginShape();
+                    canvas.beginShape()
 
                     for (var i = 0; i < path.length; i++) {
-                        var pos = path[i];
-                        var nextPos = path[i + 1];
+                        var pos = path[i]
+                        var nextPos = path[i + 1]
 
                         if (nextPos) {
-                            var p0 = createVector(pos.x, pos.y);
-                            var p1 = createVector(nextPos.x, nextPos.y);
-                            var v = p5.Vector.sub(p1, p0);
-                            v.normalize();
-                            v.rotate(HALF_PI);
-                            v.mult(d);
-                            var pneu = p5.Vector.add(p0, v);
-                            canvas.curveVertex(pneu.x, pneu.y);
+                            var p0 = createVector(pos.x, pos.y)
+                            var p1 = createVector(nextPos.x, nextPos.y)
+                            var v = p5.Vector.sub(p1, p0)
+                            v.normalize()
+                            v.rotate(HALF_PI)
+                            v.mult(d)
+                            var pneu = p5.Vector.add(p0, v)
+                            canvas.curveVertex(pneu.x, pneu.y)
                         }
                     }
 
-                    canvas.endShape(CLOSE);
+                    canvas.endShape(CLOSE)
                 }
             };
         }
 
-        function keyReleased() {
-            if (keyCode == CONTROL) saveCanvas(gd.timestamp(), 'png');
+        function keyReleased(e) {
+            console.log(keyCode, key, e)
+            if (keyCode == CONTROL) {
+                let ts = (new Date()).toISOString().replace(/z|t|:/gi,' ').trim().replaceAll(" ", "-").substring(0,19)
+                let fileName = "2d-generative-letters-"+ts
+                if(e.shiftKey) saveCanvas(fileName, 'png')
+                else svgCanvas.save(fileName+'.svg')
+            }
 
-            if (keyCode == LEFT_ARROW) density *= 1.25;
-            if (keyCode == RIGHT_ARROW) density /= 1.25;
+            if (keyCode == LEFT_ARROW) density *= 1.25
+            if (keyCode == RIGHT_ARROW) density /= 1.25
 
             if (keyCode == UP_ARROW) {
                 fontSize *= 1.1;
                 createLetters();
             }
             if (keyCode == DOWN_ARROW) {
-                fontSize /= 1.1;
-                createLetters();
+                fontSize /= 1.1
+                createLetters()
             }
 
-            if (keyCode == ENTER) createLetters();
+            if (keyCode == ENTER) createLetters()
         }
 
-        function keyPressed() {
+        function keyPressed(e) {
+            if(e.ctrlKey) return
             if (keyCode == DELETE || keyCode == BACKSPACE) {
                 if (textTyped.length > 0) {
-                    textTyped = textTyped.substring(0, textTyped.length - 1);
-                    createLetters();
+                    textTyped = textTyped.substring(0, textTyped.length - 1)
+                    createLetters()
                 }
-            }
-            if (key === '/') {
-                svgCanvas.save('svg-drawing.svg');
             }
         }
 
-        function keyTyped() {
+        function keyTyped(e) {
+            if(e.ctrlKey) return
             if (keyCode >= 32 && keyCode != 111) {
                 textTyped += key;
                 createLetters();
@@ -205,9 +210,9 @@
         }
 
         function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
-            svgCanvas = createGraphics(windowWidth, windowHeight, SVG);
-            createLetters(); // Update letters to fit new canvas size
+            resizeCanvas(windowWidth, windowHeight)
+            svgCanvas = createGraphics(windowWidth, windowHeight, SVG)
+            createLetters()
         }
 
     </script>
