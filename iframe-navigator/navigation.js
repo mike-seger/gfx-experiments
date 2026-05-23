@@ -73,6 +73,27 @@ function ensureMain() {
     }
 }
 
+function normalizeSelectionValue(value) {
+    if(!value) return ""
+    return value.replace(/^\.?\//, "").replace(/^\//, "")
+}
+
+function getInitialAnchor(anchors) {
+    const params = new URLSearchParams(window.location.search)
+    const select = params.get("select")
+    if(!select) return anchors[0]
+
+    const normalizedSelect = normalizeSelectionValue(select)
+    const selectedAnchor = anchors.find((anchor) => {
+        const hrefAttr = anchor.getAttribute("href") || ""
+        const normalizedHrefAttr = normalizeSelectionValue(hrefAttr)
+        const anchorPathname = normalizeSelectionValue(new URL(anchor.href).pathname)
+        return normalizedHrefAttr === normalizedSelect || anchorPathname.endsWith(normalizedSelect)
+    })
+
+    return selectedAnchor || anchors[0]
+}
+
 window.onload = (event) => {
     ensureMain()
     const sidenav = document.getElementById("sidenav")
@@ -92,5 +113,7 @@ window.onload = (event) => {
     switcher.addEventListener('click', (event) => { toggleSideBar(sidenav, switcher, defWidth) })
     switcher.setAttribute("id", "sidenav-switcher")
     sidenav.appendChild(switcher)
-    navigate(anchors[0])
+
+    const initialAnchor = getInitialAnchor(anchors)
+    navigate(initialAnchor)
 }
